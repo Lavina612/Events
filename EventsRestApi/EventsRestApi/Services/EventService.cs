@@ -12,31 +12,37 @@ namespace EventsRestApi.Services
             return events;
         }
 
-        public Event? GetById(int id)
+        public Event GetById(int id)
         {
-            return events.FirstOrDefault(x => x.Id == id);
+            var foundEvent = events.FirstOrDefault(x => x.Id == id);
+
+            if (foundEvent == null)
+            {
+                throw new ArgumentException($"Событие с id:{id} не найдено.");
+            }
+
+            return foundEvent;
         }
 
-        public void Add(Event addingEvent) 
+        public void Add(Event addingEvent)
         {
             events.Add(addingEvent);
         }
 
         public void Update(int id, Event newEvent)
         {
-            var updatingEvent = events.FirstOrDefault(x => x.Id == id);
+            var updatingEvent = GetById(id);
 
-            if (updatingEvent != null)
-            {
-                updatingEvent.Title = newEvent.Title;
-                updatingEvent.Description = newEvent.Description;
-                updatingEvent.StartAt = newEvent.StartAt;
-                updatingEvent.EndAt = newEvent.EndAt;
-            }
+            updatingEvent.Title = newEvent.Title;
+            updatingEvent.Description = newEvent.Description;
+            updatingEvent.StartAt = newEvent.StartAt;
+            updatingEvent.EndAt = newEvent.EndAt;
         }
 
-        public void Delete(Event deletingEvent)
+        public void Delete(int id)
         {
+            var deletingEvent = GetById(id);
+
             events.Remove(deletingEvent);
         }
     }
