@@ -1,13 +1,14 @@
-﻿using EventsRestApi.Models;
+﻿using EventsRestApi.Dto;
+using EventsRestApi.Models;
 
 namespace EventsRestApi.Interfaces
 {
     public interface IEventService
     {
-        List<Event> GetAll();
-        Event GetById(int id);
-        void Add(Event addingEvent);
-        void Update(int id, Event newEvent);
+        List<EventDto> GetAll();
+        EventDto GetById(int id);
+        void Add(EventDto addingEvent);
+        void Update(int id, EventDto newEvent);
         void Delete(int id);
     }
 }

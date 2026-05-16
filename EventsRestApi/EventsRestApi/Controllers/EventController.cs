@@ -1,5 +1,5 @@
-﻿using EventsRestApi.Interfaces;
-using EventsRestApi.Models;
+﻿using EventsRestApi.Dto;
+using EventsRestApi.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EventsRestApi.Controllers
@@ -11,13 +11,13 @@ namespace EventsRestApi.Controllers
         private readonly IEventService _eventService = eventService;
 
         [HttpGet]
-        public ActionResult<List<Event>> GetAll()
+        public ActionResult<List<EventDto>> GetAll()
         {
             return _eventService.GetAll();
         }
 
         [HttpGet("{id}")]
-        public ActionResult<Event> GetById(int id)
+        public ActionResult<EventDto> GetById(int id)
         {
             try
             {
@@ -30,16 +30,26 @@ namespace EventsRestApi.Controllers
         }
 
         [HttpPost]
-        public IActionResult Add(Event addingEvent)
+        public IActionResult Add(EventDto addingEvent)
         {
+            if (addingEvent.StartAt >= addingEvent.EndAt)
+            {
+                return BadRequest("Дата окончания должна быть позже даты начала.");
+            }
+
             _eventService.Add(addingEvent);
 
             return CreatedAtAction(nameof(GetById), new { id = addingEvent.Id }, addingEvent);
         }
 
         [HttpPut("{id}")]
-        public IActionResult Update(int id, Event updatingEvent)
+        public IActionResult Update(int id, EventDto updatingEvent)
         {
+            if (updatingEvent.StartAt >= updatingEvent.EndAt)
+            {
+                return BadRequest("Дата окончания должна быть позже даты начала.");
+            }
+
             try
             {
                 _eventService.Update(id, updatingEvent);

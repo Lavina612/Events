@@ -1,4 +1,5 @@
-﻿using EventsRestApi.Interfaces;
+﻿using EventsRestApi.Dto;
+using EventsRestApi.Interfaces;
 using EventsRestApi.Models;
 
 namespace EventsRestApi.Services
@@ -7,12 +8,44 @@ namespace EventsRestApi.Services
     {
         private static List<Event> events = [];
 
-        public List<Event> GetAll()
+        public List<EventDto> GetAll()
         {
-            return events;
+            return events.Select(MapToEventDto).ToList();
         }
 
-        public Event GetById(int id)
+        public EventDto GetById(int id)
+        {
+            var foundEvent = GetEventById(id);
+
+            return MapToEventDto(foundEvent);
+        }
+
+        public void Add(EventDto addingEventDto)
+        {
+            CheckUniqueId(addingEventDto.Id);
+
+            events.Add(MapToEvent(addingEventDto));
+        }
+
+        public void Update(int id, EventDto newEventDto)
+        {
+            var updatingEvent = GetEventById(id);
+
+            CheckUniqueId(newEventDto.Id);
+
+            var newEvent = MapToEvent(newEventDto);
+
+            updatingEvent = newEvent;
+        }
+
+        public void Delete(int id)
+        {
+            var deletingEvent = GetEventById(id);
+
+            events.Remove(deletingEvent);
+        }
+
+        private Event GetEventById(int id)
         {
             var foundEvent = events.FirstOrDefault(x => x.Id == id);
 
@@ -24,26 +57,36 @@ namespace EventsRestApi.Services
             return foundEvent;
         }
 
-        public void Add(Event addingEvent)
+        private void CheckUniqueId(int id)
         {
-            events.Add(addingEvent);
+            if (events.FirstOrDefault(x => x.Id == id) != null)
+            {
+                throw new ArgumentException($"Событий с id:{id} уже существует.");
+            }
         }
 
-        public void Update(int id, Event newEvent)
+        private Event MapToEvent(EventDto eventDto)
         {
-            var updatingEvent = GetById(id);
-
-            updatingEvent.Title = newEvent.Title;
-            updatingEvent.Description = newEvent.Description;
-            updatingEvent.StartAt = newEvent.StartAt;
-            updatingEvent.EndAt = newEvent.EndAt;
+            return new Event
+            {
+                Id = eventDto.Id,
+                Title = eventDto.Title,
+                Description = eventDto.Description,
+                StartAt = eventDto.StartAt,
+                EndAt = eventDto.EndAt
+            };
         }
 
-        public void Delete(int id)
+        private EventDto MapToEventDto(Event ev)
         {
-            var deletingEvent = GetById(id);
-
-            events.Remove(deletingEvent);
+            return new EventDto
+            {
+                Id = ev.Id,
+                Title = ev.Title,
+                Description = ev.Description,
+                StartAt = ev.StartAt,
+                EndAt = ev.EndAt
+            };
         }
     }
 }
