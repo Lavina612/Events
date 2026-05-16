@@ -37,7 +37,14 @@ namespace EventsRestApi.Controllers
                 return BadRequest("Дата окончания должна быть позже даты начала.");
             }
 
-            _eventService.Add(addingEvent);
+            try
+            {
+                _eventService.Add(addingEvent);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
 
             return CreatedAtAction(nameof(GetById), new { id = addingEvent.Id }, addingEvent);
         }

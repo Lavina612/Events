@@ -31,11 +31,10 @@ namespace EventsRestApi.Services
         {
             var updatingEvent = GetEventById(id);
 
-            CheckUniqueId(newEventDto.Id);
-
             var newEvent = MapToEvent(newEventDto);
 
             updatingEvent = newEvent;
+            updatingEvent.Id = id;
         }
 
         public void Delete(int id)

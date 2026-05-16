@@ -1,5 +1,4 @@
 ﻿using EventsRestApi.Dto;
-using EventsRestApi.Models;
 
 namespace EventsRestApi.Interfaces
 {
