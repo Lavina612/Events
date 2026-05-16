@@ -6,9 +6,14 @@ namespace EventsRestApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class EventController(IEventService eventService) : ControllerBase
+    public class EventController : ControllerBase
     {
-        private readonly IEventService _eventService = eventService;
+        private readonly IEventService _eventService;
+
+        public EventController(IEventService eventService)
+        {
+            _eventService = eventService;
+        }
 
         [HttpGet]
         public ActionResult<List<EventDto>> GetAll()
@@ -16,70 +21,56 @@ namespace EventsRestApi.Controllers
             return _eventService.GetAll();
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public ActionResult<EventDto> GetById(int id)
         {
-            try
+            var foundEventDto = _eventService.GetById(id);
+
+            if (foundEventDto == null)
             {
-                return _eventService.GetById(id);
+                return NotFound($"Событие с Id: {id} не найдено.");
             }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+
+            return foundEventDto;
         }
 
         [HttpPost]
-        public IActionResult Add(EventDto addingEvent)
+        public IActionResult Add(EventDto addingEventDto)
         {
-            if (addingEvent.StartAt >= addingEvent.EndAt)
-            {
-                return BadRequest("Дата окончания должна быть позже даты начала.");
-            }
+            var addedEventDto = _eventService.Add(addingEventDto);
 
-            try
-            {
-                _eventService.Add(addingEvent);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-
-            return CreatedAtAction(nameof(GetById), new { id = addingEvent.Id }, addingEvent);
+            return CreatedAtAction(nameof(GetById), new { id = addedEventDto.Id }, addedEventDto);
         }
 
-        [HttpPut("{id}")]
-        public IActionResult Update(int id, EventDto updatingEvent)
+        [HttpPut("{id:int}")]
+        public IActionResult Update(int id, EventDto updatingEventDto)
         {
-            if (updatingEvent.StartAt >= updatingEvent.EndAt)
+            if (id != updatingEventDto.Id)
             {
-                return BadRequest("Дата окончания должна быть позже даты начала.");
+                return BadRequest("Id в теле запроса должно совпадать с Id в URL.");
             }
 
-            try
+            var isUpdated = _eventService.Update(id, updatingEventDto);
+
+            if (!isUpdated)
             {
-                _eventService.Update(id, updatingEvent);
-                return Ok();
+                return NotFound($"Событие с Id: {id} не найдено.");
             }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+
+            return NoContent();
         }
 
-        [HttpDelete]
+        [HttpDelete("{id:int}")]
         public IActionResult Delete(int id)
         {
-            try
+            var isDeleted = _eventService.Delete(id);
+
+            if (!isDeleted)
             {
-                _eventService.Delete(id);
-                return Ok();
+                return NotFound($"Событие с Id: {id} не найдено.");
             }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+
+            return NoContent();
         }
     }
 }

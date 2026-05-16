@@ -6,62 +6,62 @@ namespace EventsRestApi.Services
 {
     public class EventService : IEventService
     {
-        private static List<Event> events = [];
+        private static readonly List<Event> events = [];
 
         public List<EventDto> GetAll()
         {
             return events.Select(MapToEventDto).ToList();
         }
 
-        public EventDto GetById(int id)
-        {
-            var foundEvent = GetEventById(id);
-
-            return MapToEventDto(foundEvent);
-        }
-
-        public void Add(EventDto addingEventDto)
-        {
-            CheckUniqueId(addingEventDto.Id);
-
-            events.Add(MapToEvent(addingEventDto));
-        }
-
-        public void Update(int id, EventDto newEventDto)
-        {
-            var updatingEvent = GetEventById(id);
-
-            var newEvent = MapToEvent(newEventDto);
-
-            updatingEvent = newEvent;
-            updatingEvent.Id = id;
-        }
-
-        public void Delete(int id)
-        {
-            var deletingEvent = GetEventById(id);
-
-            events.Remove(deletingEvent);
-        }
-
-        private Event GetEventById(int id)
+        public EventDto? GetById(int id)
         {
             var foundEvent = events.FirstOrDefault(x => x.Id == id);
 
-            if (foundEvent == null)
-            {
-                throw new ArgumentException($"Событие с id:{id} не найдено.");
-            }
-
-            return foundEvent;
+            return foundEvent == null
+                ? null
+                : MapToEventDto(foundEvent);
         }
 
-        private void CheckUniqueId(int id)
+        public EventDto Add(EventDto addingEventDto)
         {
-            if (events.FirstOrDefault(x => x.Id == id) != null)
+            addingEventDto.Id = events.Any() ? events.Max(x => x.Id) + 1 : 1;
+
+            var addingEvent = MapToEvent(addingEventDto);
+
+            events.Add(addingEvent);
+
+            return MapToEventDto(addingEvent);
+        }
+
+        public bool Update(int id, EventDto newEventDto)
+        {
+            var updatingEvent = events.FirstOrDefault(x => x.Id == id);
+
+            if (updatingEvent == null)
             {
-                throw new ArgumentException($"Событий с id:{id} уже существует.");
+                return false;
             }
+
+            updatingEvent.Title = newEventDto.Title;
+            updatingEvent.Description = newEventDto.Description;
+            updatingEvent.StartAt = newEventDto.StartAt;
+            updatingEvent.EndAt = newEventDto.EndAt;
+
+            return true;
+        }
+
+        public bool Delete(int id)
+        {
+            var deletingEvent = events.FirstOrDefault(x => x.Id == id);
+
+            if (deletingEvent == null)
+            {
+                return false;
+            }
+
+            events.Remove(deletingEvent);
+
+            return true;
         }
 
         private Event MapToEvent(EventDto eventDto)
