@@ -5,12 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 namespace EventsRestApi.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    public class EventController : ControllerBase
+    [Route("[controller]")]
+    public class EventsController : ControllerBase
     {
         private readonly IEventService _eventService;
 
-        public EventController(IEventService eventService)
+        public EventsController(IEventService eventService)
         {
             _eventService = eventService;
         }
