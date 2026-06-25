@@ -8,9 +8,26 @@ namespace EventsRestApi.Services
     {
         private static readonly List<Event> events = [];
 
-        public List<EventDto> GetAll()
+        public List<EventDto> GetAll(string? title, DateTime? from, DateTime? to)
         {
-            return events.Select(MapToEventDto).ToList();
+            var filteredEvents = events.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                filteredEvents = filteredEvents.Where(x => x.Title.Contains(title, StringComparison.CurrentCultureIgnoreCase));
+            }
+
+            if (from != null)
+            {
+                filteredEvents = filteredEvents.Where(x => x.StartAt >= from);
+            }
+
+            if (to != null)
+            {
+                filteredEvents = filteredEvents.Where(x => x.EndAt <= to);
+            }
+
+            return filteredEvents.Select(MapToEventDto).ToList();
         }
 
         public EventDto? GetById(int id)

@@ -16,9 +16,9 @@ namespace EventsRestApi.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<EventDto>> GetAll()
+        public ActionResult<List<EventDto>> GetAll([FromQuery] string? title, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
         {
-            return _eventService.GetAll();
+            return _eventService.GetAll(title, from, to);
         }
 
         [HttpGet("{id:int}")]
