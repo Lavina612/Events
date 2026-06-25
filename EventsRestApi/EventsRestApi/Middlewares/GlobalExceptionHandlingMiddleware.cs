@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using EventsRestApi.Exceptions;
+using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
 namespace EventsRestApi.Middlewares
@@ -60,8 +61,8 @@ namespace EventsRestApi.Middlewares
         {
             return ex switch
             {
-                ValidationException ve => StatusCodes.Status400BadRequest,
-                //TODO: NotFoundException ne => StatusCodes.Status404NotFound,
+                AppValidationException ve => StatusCodes.Status400BadRequest,
+                NotFoundException ne => StatusCodes.Status404NotFound,
                 _ => StatusCodes.Status500InternalServerError
             };
         }
