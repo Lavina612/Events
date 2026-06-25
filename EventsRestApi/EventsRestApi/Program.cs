@@ -1,4 +1,5 @@
 using EventsRestApi.Interfaces;
+using EventsRestApi.Middlewares;
 using EventsRestApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +9,8 @@ builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
