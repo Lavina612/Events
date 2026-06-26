@@ -8,26 +8,41 @@ namespace EventsRestApi.Services
     {
         private static readonly List<Event> events = [];
 
-        public List<EventDto> GetAll(string? title, DateTime? from, DateTime? to)
+        public PaginatedResult<EventDto> GetAll(string? title, DateTime? from, DateTime? to, int page, int pageSize)
         {
-            var filteredEvents = events.AsEnumerable();
+            var filteredEventsEnumerable = events.AsEnumerable();
 
             if (!string.IsNullOrWhiteSpace(title))
             {
-                filteredEvents = filteredEvents.Where(x => x.Title.Contains(title, StringComparison.CurrentCultureIgnoreCase));
+                filteredEventsEnumerable = filteredEventsEnumerable.Where(x => x.Title.Contains(title, StringComparison.CurrentCultureIgnoreCase));
             }
 
             if (from != null)
             {
-                filteredEvents = filteredEvents.Where(x => x.StartAt >= from);
+                filteredEventsEnumerable = filteredEventsEnumerable.Where(x => x.StartAt >= from);
             }
 
             if (to != null)
             {
-                filteredEvents = filteredEvents.Where(x => x.EndAt <= to);
+                filteredEventsEnumerable = filteredEventsEnumerable.Where(x => x.EndAt <= to);
             }
 
-            return filteredEvents.Select(MapToEventDto).ToList();
+            var filteredEvents = filteredEventsEnumerable.ToList();
+
+            var totalFilteredEventsCount = filteredEvents.Count;
+            var totalPages = (int) Math.Ceiling((double)totalFilteredEventsCount / pageSize);
+
+            var filteredEventsForPageEnumerable = filteredEvents
+                .OrderBy(x => x.StartAt)
+                .Skip(pageSize * (page - 1))
+                .Take(pageSize);
+
+            return new PaginatedResult<EventDto>(
+                filteredEventsForPageEnumerable.Select(MapToEventDto).ToList(),
+                totalFilteredEventsCount,
+                page,
+                pageSize,
+                totalPages);
         }
 
         public EventDto? GetById(int id)

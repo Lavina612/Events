@@ -16,9 +16,14 @@ namespace EventsRestApi.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<EventDto>> GetAll([FromQuery] string? title, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
+        public ActionResult<PaginatedResult<EventDto>> GetAll(
+            [FromQuery] string? title, 
+            [FromQuery] DateTime? from, 
+            [FromQuery] DateTime? to,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
-            return _eventService.GetAll(title, from, to);
+            return _eventService.GetAll(title, from, to, page, pageSize);
         }
 
         [HttpGet("{id:int}")]
