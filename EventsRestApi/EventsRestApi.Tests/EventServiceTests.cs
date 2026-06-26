@@ -22,7 +22,7 @@ namespace EventsRestApi.Tests
             var page = 1;
             var pageSize = int.MaxValue;
             List<EventDto> expectedEventsDto = allEventsDto;
-            var totalPages = (int)Math.Ceiling((double)expectedEventsDto.Count / pageSize);
+            var totalPages = (expectedEventsDto.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<EventDto>(
                 expectedEventsDto,
@@ -43,7 +43,7 @@ namespace EventsRestApi.Tests
             var page = 1;
             var pageSize = int.MaxValue;
             List<EventDto> expectedEventsDto = [allEventsDto[0]];
-            var totalPages = (int)Math.Ceiling((double)expectedEventsDto.Count / pageSize);
+            var totalPages = (expectedEventsDto.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<EventDto>(
                 expectedEventsDto,
@@ -63,7 +63,7 @@ namespace EventsRestApi.Tests
             var page = 1;
             var pageSize = int.MaxValue;
             List<EventDto> expectedEventsDto = allEventsDto[2..4];
-            var totalPages = (int)Math.Ceiling((double)expectedEventsDto.Count / pageSize);
+            var totalPages = (expectedEventsDto.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<EventDto>(
                 allEventsDto[2..4],
@@ -84,7 +84,7 @@ namespace EventsRestApi.Tests
             var page = 1;
             var pageSize = int.MaxValue;
             List<EventDto> expectedEventsDto = [allEventsDto[2]];
-            var totalPages = (int)Math.Ceiling((double)expectedEventsDto.Count / pageSize);
+            var totalPages = (expectedEventsDto.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<EventDto>(
                 [allEventsDto[2]],
@@ -104,7 +104,7 @@ namespace EventsRestApi.Tests
             var page = 2;
             var pageSize = 2;
             List<EventDto> expectedEventsDto = allEventsDto[2..4];
-            var totalPages = (int)Math.Ceiling((double)allEventsDto.Count / pageSize);
+            var totalPages = (allEventsDto.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<EventDto>(
                 expectedEventsDto,

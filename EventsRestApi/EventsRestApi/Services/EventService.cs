@@ -35,7 +35,7 @@ namespace EventsRestApi.Services
             var filteredEvents = filteredEventsEnumerable.ToList();
 
             var totalFilteredEventsCount = filteredEvents.Count;
-            var totalPages = (int) Math.Ceiling((double)totalFilteredEventsCount / pageSize);
+            var totalPages = (totalFilteredEventsCount + pageSize - 1) / pageSize;
 
             var filteredEventsForPageEnumerable = filteredEvents
                 .OrderBy(x => x.StartAt)
