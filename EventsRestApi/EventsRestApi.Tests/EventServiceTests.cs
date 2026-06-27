@@ -177,7 +177,9 @@ namespace EventsRestApi.Tests
                 addingEventDto.StartAt,
                 addingEventDto.EndAt);
 
-            _mockEventRepository.Setup(mock => mock.Get()).Returns(allEvents);
+            var expectedAddedEvent = EventMapper.MapToEvent(expectedEventDto);
+
+            _mockEventRepository.Setup(mock => mock.Add(It.IsAny<Event>())).Returns(expectedAddedEvent);
 
             var result = _eventService.Add(addingEventDto);
 

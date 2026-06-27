@@ -60,15 +60,9 @@ namespace EventsRestApi.Services
 
         public EventDto Add(EventDto addingEventDto)
         {
-            var allEvents = _eventRepository.Get();
+            var addedEvent = _eventRepository.Add(EventMapper.MapToEvent(addingEventDto));
 
-            addingEventDto.Id = allEvents.Any() ? allEvents.Max(x => x.Id) + 1 : 1;
-
-            var addingEvent = EventMapper.MapToEvent(addingEventDto);
-
-            _eventRepository.Add(addingEvent);
-
-            return addingEventDto;
+            return EventMapper.MapToEventDto(addedEvent);
         }
 
         public bool Update(int id, EventDto newEventDto)

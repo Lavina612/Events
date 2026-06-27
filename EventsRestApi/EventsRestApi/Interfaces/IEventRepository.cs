@@ -6,7 +6,7 @@ namespace EventsRestApi.Interfaces
     {
         List<Event> Get();
         Event? GetById(int id);
-        void Add(Event addingEvent);
+        Event Add(Event addingEvent);
         bool Update(int id, Event newEvent);
         bool Delete(int id);
     }

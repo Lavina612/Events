@@ -17,9 +17,13 @@ namespace EventsRestApi.Repositories
             return _events.FirstOrDefault(x => x.Id == id);
         }
 
-        public void Add(Event addingEvent)
+        public Event Add(Event addingEvent)
         {
+            addingEvent.Id = _events.Any() ? _events.Max(x => x.Id) + 1 : 1;
+
             _events.Add(addingEvent);
+
+            return addingEvent;
         }
 
         public bool Update(int id, Event newEvent)
