@@ -1,21 +1,20 @@
 ﻿using EventsRestApi.Dto;
 using EventsRestApi.Interfaces;
-using EventsRestApi.Models;
 
 namespace EventsRestApi.Services
 {
     public class EventService : IEventService
     {
-        private readonly List<Event> _events;
+        private readonly IEventRepository _eventRepository;
 
-        public EventService(List<Event> events)
+        public EventService(IEventRepository eventRepository)
         {
-            _events = events;
+            _eventRepository = eventRepository;
         }
 
-        public PaginatedResult<EventDto> GetAll(string? title, DateTime? from, DateTime? to, int page, int pageSize)
+        public PaginatedResult<EventDto> Get(string? title, DateTime? from, DateTime? to, int page, int pageSize)
         {
-            var filteredEventsEnumerable = _events.AsEnumerable();
+            var filteredEventsEnumerable = _eventRepository.Get().AsEnumerable();
 
             if (!string.IsNullOrWhiteSpace(title))
             {
@@ -52,7 +51,7 @@ namespace EventsRestApi.Services
 
         public EventDto? GetById(int id)
         {
-            var foundEvent = _events.FirstOrDefault(x => x.Id == id);
+            var foundEvent = _eventRepository.GetById(id);
 
             return foundEvent == null
                 ? null
@@ -61,44 +60,25 @@ namespace EventsRestApi.Services
 
         public EventDto Add(EventDto addingEventDto)
         {
-            addingEventDto.Id = _events.Any() ? _events.Max(x => x.Id) + 1 : 1;
+            var allEvents = _eventRepository.Get();
+
+            addingEventDto.Id = allEvents.Any() ? allEvents.Max(x => x.Id) + 1 : 1;
 
             var addingEvent = EventMapper.MapToEvent(addingEventDto);
 
-            _events.Add(addingEvent);
+            _eventRepository.Add(addingEvent);
 
-            return EventMapper.MapToEventDto(addingEvent);
+            return addingEventDto;
         }
 
         public bool Update(int id, EventDto newEventDto)
         {
-            var updatingEvent = _events.FirstOrDefault(x => x.Id == id);
-
-            if (updatingEvent == null)
-            {
-                return false;
-            }
-
-            updatingEvent.Title = newEventDto.Title;
-            updatingEvent.Description = newEventDto.Description;
-            updatingEvent.StartAt = newEventDto.StartAt;
-            updatingEvent.EndAt = newEventDto.EndAt;
-
-            return true;
+            return _eventRepository.Update(id, EventMapper.MapToEvent(newEventDto));
         }
 
         public bool Delete(int id)
         {
-            var deletingEvent = _events.FirstOrDefault(x => x.Id == id);
-
-            if (deletingEvent == null)
-            {
-                return false;
-            }
-
-            _events.Remove(deletingEvent);
-
-            return true;
+            return _eventRepository.Delete(id);
         }
     }
 }
