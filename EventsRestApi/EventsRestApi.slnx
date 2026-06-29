@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="EventsRestApi.Tests/EventsRestApi.Tests.csproj" Id="36cb6ea1-f91b-40f5-b3e2-bd2c5050ab2b" />
   <Project Path="EventsRestApi/EventsRestApi.csproj" />
 </Solution>

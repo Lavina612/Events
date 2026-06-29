@@ -27,5 +27,21 @@ namespace EventsRestApi.Dto
                 );
             }
         }
+
+        public EventDto() { }
+
+        public EventDto(
+            int id,
+            string title,
+            string? description,
+            DateTime startAt,
+            DateTime endAt)
+        {
+            Id = id;
+            Title = title;
+            Description = description;
+            StartAt = startAt;
+            EndAt = endAt;
+        }
     }
 }

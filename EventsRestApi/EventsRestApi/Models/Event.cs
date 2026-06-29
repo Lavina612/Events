@@ -11,5 +11,21 @@
         public DateTime StartAt { get; set; }
 
         public DateTime EndAt { get; set; }
+
+        public Event() { }
+
+        public Event(
+            int id,
+            string title,
+            string? description,
+            DateTime startAt,
+            DateTime endAt)
+        {
+            Id = id;
+            Title = title;
+            Description = description;
+            StartAt = startAt;
+            EndAt = endAt;
+        }
     }
 }
