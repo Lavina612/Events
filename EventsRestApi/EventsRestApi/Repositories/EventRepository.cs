@@ -12,21 +12,21 @@ namespace EventsRestApi.Repositories
             return _events;
         }
 
-        public Event? GetById(int id)
+        public Event? GetById(Guid id)
         {
             return _events.FirstOrDefault(x => x.Id == id);
         }
 
         public Event Add(Event addingEvent)
         {
-            addingEvent.Id = _events.Any() ? _events.Max(x => x.Id) + 1 : 1;
+            addingEvent.Id = Guid.NewGuid();
 
             _events.Add(addingEvent);
 
             return addingEvent;
         }
 
-        public bool Update(int id, Event newEvent)
+        public bool Update(Guid id, Event newEvent)
         {
             var updatingEvent = GetById(id);
 
@@ -43,7 +43,7 @@ namespace EventsRestApi.Repositories
             return true;
         }
 
-        public bool Delete(int id)
+        public bool Delete(Guid id)
         {
             var deletingEvent = GetById(id);
 

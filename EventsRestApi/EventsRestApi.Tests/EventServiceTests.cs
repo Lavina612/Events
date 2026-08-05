@@ -205,7 +205,7 @@ namespace EventsRestApi.Tests
         public void GetById_WithExistingId_ReturnEventById()
         {
             /*---ARRANGE---*/
-            var id = 3;
+            var id = allEventsDto[2].Id;
             var expected = allEventsDto[2];
 
             _mockEventRepository.Setup(mock => mock.GetById(id)).Returns(allEvents[2]);
@@ -221,7 +221,7 @@ namespace EventsRestApi.Tests
         public void GetById_WithNonExistentId_ReturnNull()
         {
             /*---ARRANGE---*/
-            var id = 0;
+            var id = Guid.Empty;
 
             _mockEventRepository.Setup(mock => mock.GetById(id)).Returns((Event?)null);
 
@@ -237,14 +237,14 @@ namespace EventsRestApi.Tests
         {
             /*---ARRANGE---*/
             var addingEventDto = new EventDto(
-                0,
+                Guid.Empty,
                 $"Event 6",
                 $"Description 6",
                 new DateTime(2026, 06, 06, 09, 06, 00),
                 new DateTime(2026, 06, 06, 09, 06, 00).AddDays(5));
 
             var expectedEventDto = new EventDto(
-                6,
+                new Guid($"00000000-0000-0000-0000-000000000006"),
                 addingEventDto.Title,
                 addingEventDto.Description,
                 addingEventDto.StartAt,
@@ -265,10 +265,10 @@ namespace EventsRestApi.Tests
         public void Update_WithExistingId_ReturnTrue()
         {
             /*---ARRANGE---*/
-            var id = 1;
+            var id = allEvents[0].Id;
 
             var updatingEventDto = new EventDto(
-                1,
+                id,
                 $"Event New",
                 $"Description 1",
                 new DateTime(2026, 06, 01, 09, 01, 00),
@@ -287,10 +287,10 @@ namespace EventsRestApi.Tests
         public void Update_WithNonExistentId_ReturnFalse()
         {
             /*---ARRANGE---*/
-            var id = 0;
+            var id = Guid.Empty;
 
             var updatingEventDto = new EventDto(
-                0,
+                id,
                 $"Event New",
                 $"Description 1",
                 new DateTime(2026, 06, 01, 09, 01, 00),
@@ -324,7 +324,7 @@ namespace EventsRestApi.Tests
         public void Delete_WithNonExistentId_ReturnFalse()
         {
             /*---ARRANGE---*/
-            var id = 0;
+            var id = Guid.Empty;
 
             _mockEventRepository.Setup(mock => mock.Delete(id)).Returns(false);
 
@@ -345,7 +345,7 @@ namespace EventsRestApi.Tests
             for (int i = 1; i <= eventCount; i++)
             {
                 currentEvent = new Event(
-                    i,
+                    new Guid($"00000000-0000-0000-0000-00000000000{i}"),
                     $"{title} {i}",
                     $"{description} {i}",
                     new DateTime(2026, 06, i % 28, 09, i % 60, 00),

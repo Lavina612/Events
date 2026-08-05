@@ -26,8 +26,8 @@ namespace EventsRestApi.Controllers
             return _eventService.Get(title, from, to, page, pageSize);
         }
 
-        [HttpGet("{id:int}")]
-        public ActionResult<EventDto> GetById(int id)
+        [HttpGet("{id:guid}")]
+        public ActionResult<EventDto> GetById(Guid id)
         {
             var foundEventDto = _eventService.GetById(id);
 
@@ -47,8 +47,8 @@ namespace EventsRestApi.Controllers
             return CreatedAtAction(nameof(GetById), new { id = addedEventDto.Id }, addedEventDto);
         }
 
-        [HttpPut("{id:int}")]
-        public IActionResult Update(int id, EventDto updatingEventDto)
+        [HttpPut("{id:guid}")]
+        public IActionResult Update(Guid id, EventDto updatingEventDto)
         {
             if (id != updatingEventDto.Id)
             {
@@ -65,8 +65,8 @@ namespace EventsRestApi.Controllers
             return NoContent();
         }
 
-        [HttpDelete("{id:int}")]
-        public IActionResult Delete(int id)
+        [HttpDelete("{id:guid}")]
+        public IActionResult Delete(Guid id)
         {
             var isDeleted = _eventService.Delete(id);
 

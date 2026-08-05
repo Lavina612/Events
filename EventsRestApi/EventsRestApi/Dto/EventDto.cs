@@ -4,7 +4,7 @@ namespace EventsRestApi.Dto
 {
     public class EventDto : IValidatableObject
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
 
         [Required(ErrorMessage = "Название мероприятия обязательно для заполнения.")]
         public string Title { get; set; } = string.Empty;
@@ -31,7 +31,7 @@ namespace EventsRestApi.Dto
         public EventDto() { }
 
         public EventDto(
-            int id,
+            Guid id,
             string title,
             string? description,
             DateTime startAt,

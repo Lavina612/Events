@@ -5,9 +5,9 @@ namespace EventsRestApi.Interfaces
     public interface IEventService
     {
         PaginatedResult<EventDto> Get(string? title, DateTime? from, DateTime? to, int page, int pageSize);
-        EventDto? GetById(int id);
+        EventDto? GetById(Guid id);
         EventDto Add(EventDto addingEventDto);
-        bool Update(int id, EventDto newEventDto);
-        bool Delete(int id);
+        bool Update(Guid id, EventDto newEventDto);
+        bool Delete(Guid id);
     }
 }

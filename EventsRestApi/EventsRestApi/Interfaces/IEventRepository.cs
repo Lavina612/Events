@@ -5,9 +5,9 @@ namespace EventsRestApi.Interfaces
     public interface IEventRepository
     {
         List<Event> Get();
-        Event? GetById(int id);
+        Event? GetById(Guid id);
         Event Add(Event addingEvent);
-        bool Update(int id, Event newEvent);
-        bool Delete(int id);
+        bool Update(Guid id, Event newEvent);
+        bool Delete(Guid id);
     }
 }

@@ -49,7 +49,7 @@ namespace EventsRestApi.Services
                 totalPages);
         }
 
-        public EventDto? GetById(int id)
+        public EventDto? GetById(Guid id)
         {
             var foundEvent = _eventRepository.GetById(id);
 
@@ -65,12 +65,12 @@ namespace EventsRestApi.Services
             return EventMapper.MapToEventDto(addedEvent);
         }
 
-        public bool Update(int id, EventDto newEventDto)
+        public bool Update(Guid id, EventDto newEventDto)
         {
             return _eventRepository.Update(id, EventMapper.MapToEvent(newEventDto));
         }
 
-        public bool Delete(int id)
+        public bool Delete(Guid id)
         {
             return _eventRepository.Delete(id);
         }
