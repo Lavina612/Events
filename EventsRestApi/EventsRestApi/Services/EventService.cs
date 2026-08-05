@@ -1,4 +1,5 @@
-﻿using EventsRestApi.Dto;
+﻿using EventsRestApi.Dto.Request;
+using EventsRestApi.Dto.Response;
 using EventsRestApi.Interfaces;
 
 namespace EventsRestApi.Services
@@ -12,7 +13,7 @@ namespace EventsRestApi.Services
             _eventRepository = eventRepository;
         }
 
-        public PaginatedResult<EventDto> Get(string? title, DateTime? from, DateTime? to, int page, int pageSize)
+        public PaginatedResult<EventResponseDto> Get(string? title, DateTime? from, DateTime? to, int page, int pageSize)
         {
             var filteredEventsEnumerable = _eventRepository.Get().AsEnumerable();
 
@@ -41,31 +42,31 @@ namespace EventsRestApi.Services
                 .Skip(pageSize * (page - 1))
                 .Take(pageSize);
 
-            return new PaginatedResult<EventDto>(
-                filteredEventsForPageEnumerable.Select(EventMapper.MapToEventDto).ToList(),
+            return new PaginatedResult<EventResponseDto>(
+                filteredEventsForPageEnumerable.Select(EventMapper.MapToEventResponseDto).ToList(),
                 totalFilteredEventsCount,
                 page,
                 pageSize,
                 totalPages);
         }
 
-        public EventDto? GetById(Guid id)
+        public EventResponseDto? GetById(Guid id)
         {
             var foundEvent = _eventRepository.GetById(id);
 
             return foundEvent == null
                 ? null
-                : EventMapper.MapToEventDto(foundEvent);
+                : EventMapper.MapToEventResponseDto(foundEvent);
         }
 
-        public EventDto Add(EventDto addingEventDto)
+        public EventResponseDto Add(EventRequestDto addingEventDto)
         {
             var addedEvent = _eventRepository.Add(EventMapper.MapToEvent(addingEventDto));
 
-            return EventMapper.MapToEventDto(addedEvent);
+            return EventMapper.MapToEventResponseDto(addedEvent);
         }
 
-        public bool Update(Guid id, EventDto newEventDto)
+        public bool Update(Guid id, EventRequestDto newEventDto)
         {
             return _eventRepository.Update(id, EventMapper.MapToEvent(newEventDto));
         }

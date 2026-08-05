@@ -1,11 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace EventsRestApi.Dto
+namespace EventsRestApi.Dto.Request
 {
-    public class EventDto : IValidatableObject
+    public class EventRequestDto : IValidatableObject
     {
-        public Guid Id { get; set; }
-
         [Required(ErrorMessage = "Название мероприятия обязательно для заполнения.")]
         public string Title { get; set; } = string.Empty;
 
@@ -28,16 +26,14 @@ namespace EventsRestApi.Dto
             }
         }
 
-        public EventDto() { }
+        public EventRequestDto() { }
 
-        public EventDto(
-            Guid id,
+        public EventRequestDto(
             string title,
             string? description,
             DateTime startAt,
             DateTime endAt)
         {
-            Id = id;
             Title = title;
             Description = description;
             StartAt = startAt;

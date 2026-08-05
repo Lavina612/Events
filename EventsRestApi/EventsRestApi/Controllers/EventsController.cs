@@ -1,4 +1,5 @@
-﻿using EventsRestApi.Dto;
+﻿using EventsRestApi.Dto.Request;
+using EventsRestApi.Dto.Response;
 using EventsRestApi.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,7 +17,7 @@ namespace EventsRestApi.Controllers
         }
 
         [HttpGet]
-        public ActionResult<PaginatedResult<EventDto>> GetAll(
+        public ActionResult<PaginatedResult<EventResponseDto>> GetAll(
             [FromQuery] string? title, 
             [FromQuery] DateTime? from, 
             [FromQuery] DateTime? to,
@@ -27,7 +28,7 @@ namespace EventsRestApi.Controllers
         }
 
         [HttpGet("{id:guid}")]
-        public ActionResult<EventDto> GetById(Guid id)
+        public ActionResult<EventResponseDto> GetById(Guid id)
         {
             var foundEventDto = _eventService.GetById(id);
 
@@ -40,7 +41,7 @@ namespace EventsRestApi.Controllers
         }
 
         [HttpPost]
-        public IActionResult Add(EventDto addingEventDto)
+        public IActionResult Add(EventRequestDto addingEventDto)
         {
             var addedEventDto = _eventService.Add(addingEventDto);
 
@@ -48,13 +49,8 @@ namespace EventsRestApi.Controllers
         }
 
         [HttpPut("{id:guid}")]
-        public IActionResult Update(Guid id, EventDto updatingEventDto)
+        public IActionResult Update(Guid id, EventRequestDto updatingEventDto)
         {
-            if (id != updatingEventDto.Id)
-            {
-                return BadRequest("Id в теле запроса должно совпадать с Id в URL.");
-            }
-
             var isUpdated = _eventService.Update(id, updatingEventDto);
 
             if (!isUpdated)

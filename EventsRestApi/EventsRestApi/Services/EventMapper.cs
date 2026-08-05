@@ -1,30 +1,29 @@
-﻿using EventsRestApi.Dto;
+﻿using EventsRestApi.Dto.Request;
+using EventsRestApi.Dto.Response;
 using EventsRestApi.Models;
 
 namespace EventsRestApi.Services
 {
     public static class EventMapper
     {
-        public static Event MapToEvent(EventDto eventDto)
+        public static Event MapToEvent(EventRequestDto eventDto)
         {
             return new Event(
-                eventDto.Id,
+                Guid.Empty,
                 eventDto.Title,
                 eventDto.Description,
                 eventDto.StartAt,
                 eventDto.EndAt);
         }
 
-        public static EventDto MapToEventDto(Event ev)
+        public static EventResponseDto MapToEventResponseDto(Event ev)
         {
-            return new EventDto
-            {
-                Id = ev.Id,
-                Title = ev.Title,
-                Description = ev.Description,
-                StartAt = ev.StartAt,
-                EndAt = ev.EndAt
-            };
+            return new EventResponseDto(
+                ev.Id,
+                ev.Title,
+                ev.Description,
+                ev.StartAt,
+                ev.EndAt);
         }
     }
 }

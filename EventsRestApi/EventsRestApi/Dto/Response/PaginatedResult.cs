@@ -1,4 +1,4 @@
-﻿namespace EventsRestApi.Dto
+﻿namespace EventsRestApi.Dto.Response
 {
     public class PaginatedResult<T>
     {

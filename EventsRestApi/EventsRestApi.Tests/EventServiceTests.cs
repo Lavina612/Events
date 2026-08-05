@@ -1,4 +1,5 @@
-﻿using EventsRestApi.Dto;
+﻿using EventsRestApi.Dto.Request;
+using EventsRestApi.Dto.Response;
 using EventsRestApi.Interfaces;
 using EventsRestApi.Models;
 using EventsRestApi.Services;
@@ -12,7 +13,7 @@ namespace EventsRestApi.Tests
         private readonly Mock<IEventRepository> _mockEventRepository;
 
         private readonly List<Event> allEvents = [];
-        private readonly List<EventDto> allEventsDto = [];
+        private readonly List<EventResponseDto> allEventResponseDto = [];
 
         public EventServiceTests()
         {
@@ -28,10 +29,10 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var page = 1;
             var pageSize = int.MaxValue;
-            List<EventDto> expectedEventsDto = allEventsDto;
+            List<EventResponseDto> expectedEventsDto = allEventResponseDto;
             var totalPages = (expectedEventsDto.Count + pageSize - 1) / pageSize;
 
-            var expected = new PaginatedResult<EventDto>(
+            var expected = new PaginatedResult<EventResponseDto>(
                 expectedEventsDto,
                 expectedEventsDto.Count,
                 page,
@@ -55,10 +56,10 @@ namespace EventsRestApi.Tests
             var titleParam = allEvents[0].Title.Substring(2).ToUpper();
             var page = 1;
             var pageSize = int.MaxValue;
-            List<EventDto> expectedEventsDto = [allEventsDto[0]];
+            List<EventResponseDto> expectedEventsDto = [allEventResponseDto[0]];
             var totalPages = (expectedEventsDto.Count + pageSize - 1) / pageSize;
 
-            var expected = new PaginatedResult<EventDto>(
+            var expected = new PaginatedResult<EventResponseDto>(
                 expectedEventsDto,
                 expectedEventsDto.Count,
                 page,
@@ -80,11 +81,11 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var page = 1;
             var pageSize = int.MaxValue;
-            List<EventDto> expectedEventsDto = allEventsDto[2..4];
+            List<EventResponseDto> expectedEventsDto = allEventResponseDto[2..4];
             var totalPages = (expectedEventsDto.Count + pageSize - 1) / pageSize;
 
-            var expected = new PaginatedResult<EventDto>(
-                allEventsDto[2..4],
+            var expected = new PaginatedResult<EventResponseDto>(
+                allEventResponseDto[2..4],
                 expectedEventsDto.Count,
                 page,
                 pageSize,
@@ -106,11 +107,11 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var page = 1;
             var pageSize = int.MaxValue;
-            List<EventDto> expectedEventsDto = [allEventsDto[2]];
+            List<EventResponseDto> expectedEventsDto = [allEventResponseDto[2]];
             var totalPages = (expectedEventsDto.Count + pageSize - 1) / pageSize;
 
-            var expected = new PaginatedResult<EventDto>(
-                [allEventsDto[2]],
+            var expected = new PaginatedResult<EventResponseDto>(
+                [allEventResponseDto[2]],
                 expectedEventsDto.Count,
                 page,
                 pageSize,
@@ -131,12 +132,12 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var page = 2;
             var pageSize = 2;
-            List<EventDto> expectedEventsDto = allEventsDto[2..4];
-            var totalPages = (allEventsDto.Count + pageSize - 1) / pageSize;
+            List<EventResponseDto> expectedEventsDto = allEventResponseDto[2..4];
+            var totalPages = (allEventResponseDto.Count + pageSize - 1) / pageSize;
 
-            var expected = new PaginatedResult<EventDto>(
+            var expected = new PaginatedResult<EventResponseDto>(
                 expectedEventsDto,
-                allEventsDto.Count,
+                allEventResponseDto.Count,
                 page,
                 pageSize,
                 totalPages);
@@ -157,10 +158,10 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var page = 1;
             var pageSize = 10;
-            List<EventDto> expectedEventsDto = [];
+            List<EventResponseDto> expectedEventsDto = [];
             var totalPages = (expectedEventsDto.Count + pageSize - 1) / pageSize;
 
-            var expected = new PaginatedResult<EventDto>(
+            var expected = new PaginatedResult<EventResponseDto>(
                 expectedEventsDto,
                 expectedEventsDto.Count,
                 page,
@@ -182,12 +183,12 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var page = 10;
             var pageSize = 10;
-            List<EventDto> expectedEventsDto = [];
-            var totalPages = (allEventsDto.Count + pageSize - 1) / pageSize;
+            List<EventResponseDto> expectedEventsDto = [];
+            var totalPages = (allEventResponseDto.Count + pageSize - 1) / pageSize;
 
-            var expected = new PaginatedResult<EventDto>(
+            var expected = new PaginatedResult<EventResponseDto>(
                 expectedEventsDto,
-                allEventsDto.Count,
+                allEventResponseDto.Count,
                 page,
                 pageSize,
                 totalPages);
@@ -205,8 +206,8 @@ namespace EventsRestApi.Tests
         public void GetById_WithExistingId_ReturnEventById()
         {
             /*---ARRANGE---*/
-            var id = allEventsDto[2].Id;
-            var expected = allEventsDto[2];
+            var id = allEventResponseDto[2].Id;
+            var expected = allEventResponseDto[2];
 
             _mockEventRepository.Setup(mock => mock.GetById(id)).Returns(allEvents[2]);
 
@@ -236,21 +237,21 @@ namespace EventsRestApi.Tests
         public void Add_CorrectEventDto_EventIdWasChanged()
         {
             /*---ARRANGE---*/
-            var addingEventDto = new EventDto(
-                Guid.Empty,
+            var addingEventDto = new EventRequestDto(
                 $"Event 6",
                 $"Description 6",
                 new DateTime(2026, 06, 06, 09, 06, 00),
                 new DateTime(2026, 06, 06, 09, 06, 00).AddDays(5));
 
-            var expectedEventDto = new EventDto(
+            var expectedEventDto = new EventResponseDto(
                 new Guid($"00000000-0000-0000-0000-000000000006"),
                 addingEventDto.Title,
                 addingEventDto.Description,
                 addingEventDto.StartAt,
                 addingEventDto.EndAt);
 
-            var expectedAddedEvent = EventMapper.MapToEvent(expectedEventDto);
+            var expectedAddedEvent = EventMapper.MapToEvent(addingEventDto);
+            expectedAddedEvent.Id = expectedEventDto.Id;
 
             _mockEventRepository.Setup(mock => mock.Add(It.IsAny<Event>())).Returns(expectedAddedEvent);
 
@@ -267,8 +268,7 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var id = allEvents[0].Id;
 
-            var updatingEventDto = new EventDto(
-                id,
+            var updatingEventDto = new EventRequestDto(
                 $"Event New",
                 $"Description 1",
                 new DateTime(2026, 06, 01, 09, 01, 00),
@@ -289,8 +289,7 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var id = Guid.Empty;
 
-            var updatingEventDto = new EventDto(
-                id,
+            var updatingEventDto = new EventRequestDto(
                 $"Event New",
                 $"Description 1",
                 new DateTime(2026, 06, 01, 09, 01, 00),
@@ -353,7 +352,7 @@ namespace EventsRestApi.Tests
 
                 allEvents.Add(currentEvent);
 
-                allEventsDto.Add(EventMapper.MapToEventDto(currentEvent));
+                allEventResponseDto.Add(EventMapper.MapToEventResponseDto(currentEvent));
             }
         }
     }
