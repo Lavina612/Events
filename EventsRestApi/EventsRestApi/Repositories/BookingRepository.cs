@@ -20,7 +20,7 @@ namespace EventsRestApi.Repositories
         public Booking Add(Guid eventId)
         {
             var addingBooking = new Booking(
-                new Guid(),
+                Guid.NewGuid(),
                 eventId,
                 BookingStatus.Pending,
                 DateTime.UtcNow);

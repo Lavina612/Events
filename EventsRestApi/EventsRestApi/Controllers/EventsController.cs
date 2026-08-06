@@ -11,9 +11,14 @@ namespace EventsRestApi.Controllers
     {
         private readonly IEventService _eventService;
 
-        public EventsController(IEventService eventService)
+        private readonly IBookingService _bookingService;
+
+        public EventsController(
+            IEventService eventService,
+            IBookingService bookingService)
         {
             _eventService = eventService;
+            _bookingService = bookingService;
         }
 
         [HttpGet]
@@ -72,6 +77,24 @@ namespace EventsRestApi.Controllers
             }
 
             return NoContent();
+        }
+
+        [HttpPost("{eventId:guid}/book")]
+        public async Task<ActionResult<BookingResponseDto>> CreateBooking(Guid eventId)
+        {
+            var createdBooking = await _bookingService.CreateBookingAsync(eventId);
+
+            return createdBooking == null
+                ? NotFound($"Невозможно создать бронь, т.к. событие с Id: {eventId} не найдено либо уже завершилось.")
+                : AcceptedAtRoute(
+                    routeName: "GetBookingById",
+                    routeValues: new { id = createdBooking.Id },
+                    value: new { 
+                        Message = $"Создана бронь для события.", 
+                        Id = createdBooking.Id,
+                        EventId = eventId,
+                        Status = createdBooking.Status
+                    });
         }
     }
 }

@@ -1,11 +1,12 @@
-﻿using EventsRestApi.Models;
+﻿using EventsRestApi.Dto.Response;
+using EventsRestApi.Models;
 
 namespace EventsRestApi.Interfaces
 {
     public interface IBookingService
     {
-        Task<Booking?> GetBookingByIdAsync(Guid bookingId);
+        Task<BookingResponseDto?> GetBookingByIdAsync(Guid bookingId);
 
-        Task<Booking> CreateBookingAsync(Guid eventId);
+        Task<BookingResponseDto?> CreateBookingAsync(Guid eventId);
     }
 }

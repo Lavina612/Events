@@ -1,25 +1,44 @@
-﻿using EventsRestApi.Interfaces;
-using EventsRestApi.Models;
+﻿using EventsRestApi.Dto.Response;
+using EventsRestApi.Interfaces;
+using EventsRestApi.Mappers;
 
 namespace EventsRestApi.Services
 {
     public class BookingService : IBookingService
     {
         private readonly IBookingRepository _bookingRepository;
+        
+        private readonly IEventService _eventService;
 
-        public BookingService(IBookingRepository bookingRepository)
+        public BookingService(
+            IBookingRepository bookingRepository,
+            IEventService eventService)
         {
             _bookingRepository = bookingRepository;
+            _eventService = eventService;
         }
 
-        public async Task<Booking?> GetBookingByIdAsync(Guid bookingId)
+        public async Task<BookingResponseDto?> GetBookingByIdAsync(Guid bookingId)
         {
-            return _bookingRepository.GetById(bookingId);
+            var foundBooking = _bookingRepository.GetById(bookingId);
+
+            return foundBooking == null
+                ? null
+                : Mapper.MapToBookingResponseDto(foundBooking);
         }
 
-        public async Task<Booking> CreateBookingAsync(Guid eventId)
+        public async Task<BookingResponseDto?> CreateBookingAsync(Guid eventId)
         {
-            return _bookingRepository.Add(eventId);
+            var foundEvent = _eventService.GetById(eventId);
+
+            if (foundEvent == null || foundEvent.EndAt < DateTime.UtcNow)
+            {
+                return null;
+            }
+
+            var addedBooking = _bookingRepository.Add(eventId);
+
+            return Mapper.MapToBookingResponseDto(addedBooking);
         }
     }
 }

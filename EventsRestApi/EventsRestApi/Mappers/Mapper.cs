@@ -2,9 +2,9 @@
 using EventsRestApi.Dto.Response;
 using EventsRestApi.Models;
 
-namespace EventsRestApi.Services
+namespace EventsRestApi.Mappers
 {
-    public static class EventMapper
+    public static class Mapper
     {
         public static Event MapToEvent(EventRequestDto eventDto)
         {
@@ -24,6 +24,16 @@ namespace EventsRestApi.Services
                 ev.Description,
                 ev.StartAt,
                 ev.EndAt);
+        }
+
+        public static BookingResponseDto MapToBookingResponseDto(Booking booking)
+        {
+            return new BookingResponseDto(
+                booking.Id,
+                booking.EventId,
+                booking.Status,
+                booking.CreatedAt,
+                booking.ProcessedAt);
         }
     }
 }

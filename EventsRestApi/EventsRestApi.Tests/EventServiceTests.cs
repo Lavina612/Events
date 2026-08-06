@@ -1,6 +1,7 @@
 ﻿using EventsRestApi.Dto.Request;
 using EventsRestApi.Dto.Response;
 using EventsRestApi.Interfaces;
+using EventsRestApi.Mappers;
 using EventsRestApi.Models;
 using EventsRestApi.Services;
 using Moq;
@@ -250,7 +251,7 @@ namespace EventsRestApi.Tests
                 addingEventDto.StartAt,
                 addingEventDto.EndAt);
 
-            var expectedAddedEvent = EventMapper.MapToEvent(addingEventDto);
+            var expectedAddedEvent = Mapper.MapToEvent(addingEventDto);
             expectedAddedEvent.Id = expectedEventDto.Id;
 
             _mockEventRepository.Setup(mock => mock.Add(It.IsAny<Event>())).Returns(expectedAddedEvent);
@@ -352,7 +353,7 @@ namespace EventsRestApi.Tests
 
                 allEvents.Add(currentEvent);
 
-                allEventResponseDto.Add(EventMapper.MapToEventResponseDto(currentEvent));
+                allEventResponseDto.Add(Mapper.MapToEventResponseDto(currentEvent));
             }
         }
     }

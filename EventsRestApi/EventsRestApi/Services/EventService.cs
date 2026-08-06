@@ -1,6 +1,7 @@
 ﻿using EventsRestApi.Dto.Request;
 using EventsRestApi.Dto.Response;
 using EventsRestApi.Interfaces;
+using EventsRestApi.Mappers;
 
 namespace EventsRestApi.Services
 {
@@ -43,7 +44,7 @@ namespace EventsRestApi.Services
                 .Take(pageSize);
 
             return new PaginatedResult<EventResponseDto>(
-                filteredEventsForPageEnumerable.Select(EventMapper.MapToEventResponseDto).ToList(),
+                filteredEventsForPageEnumerable.Select(Mapper.MapToEventResponseDto).ToList(),
                 totalFilteredEventsCount,
                 page,
                 pageSize,
@@ -56,19 +57,19 @@ namespace EventsRestApi.Services
 
             return foundEvent == null
                 ? null
-                : EventMapper.MapToEventResponseDto(foundEvent);
+                : Mapper.MapToEventResponseDto(foundEvent);
         }
 
         public EventResponseDto Add(EventRequestDto addingEventDto)
         {
-            var addedEvent = _eventRepository.Add(EventMapper.MapToEvent(addingEventDto));
+            var addedEvent = _eventRepository.Add(Mapper.MapToEvent(addingEventDto));
 
-            return EventMapper.MapToEventResponseDto(addedEvent);
+            return Mapper.MapToEventResponseDto(addedEvent);
         }
 
         public bool Update(Guid id, EventRequestDto newEventDto)
         {
-            return _eventRepository.Update(id, EventMapper.MapToEvent(newEventDto));
+            return _eventRepository.Update(id, Mapper.MapToEvent(newEventDto));
         }
 
         public bool Delete(Guid id)
