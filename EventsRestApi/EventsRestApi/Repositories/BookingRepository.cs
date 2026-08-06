@@ -17,11 +17,13 @@ namespace EventsRestApi.Repositories
             return _bookings.FirstOrDefault(x => x.Id == id);
         }
 
-        public Booking Add(Booking addingBooking)
+        public Booking Add(Guid eventId)
         {
-            addingBooking.Id = new Guid();
-            addingBooking.Status = BookingStatus.Pending;
-            addingBooking.CreatedAt = DateTime.UtcNow;
+            var addingBooking = new Booking(
+                new Guid(),
+                eventId,
+                BookingStatus.Pending,
+                DateTime.UtcNow);
 
             _bookings.Add(addingBooking);
 
