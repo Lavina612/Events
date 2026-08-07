@@ -17,9 +17,9 @@ namespace EventsRestApi.Repositories
             return _bookings.FirstOrDefault(x => x.Id == id);
         }
 
-        public List<Booking> GetByStatus(BookingStatus status)
+        public List<Booking> GetByStatus(BookingStatus status, int count)
         {
-            return _bookings.Where(x => x.Status == status).ToList();
+            return _bookings.Where(x => x.Status == status).Take(count).ToList();
         }
 
         public Booking Add(Guid eventId)
@@ -35,18 +35,16 @@ namespace EventsRestApi.Repositories
             return addingBooking;
         }
 
-        public bool Update(Guid id, Booking newBooking)
+        public bool Update(Booking newBooking)
         {
-            var updatingBooking = GetById(id);
+            var updatingBooking = GetById(newBooking.Id);
 
             if (updatingBooking == null)
             {
                 return false;
             }
 
-            updatingBooking.EventId = newBooking.EventId;
             updatingBooking.Status = newBooking.Status;
-            updatingBooking.CreatedAt = newBooking.CreatedAt;
             updatingBooking.ProcessedAt = newBooking.ProcessedAt;
 
             return true;

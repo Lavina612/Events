@@ -9,6 +9,6 @@ namespace EventsRestApi.Interfaces
 
         Task<BookingResponseDto?> CreateBookingAsync(Guid eventId, CancellationToken cancellationToken);
 
-        Task ProcessPendingBookingsAsync(CancellationToken cancellationToken);
+        Task<int> ProcessPendingBookingsBunchAsync(int count, CancellationToken cancellationToken);
     }
 }

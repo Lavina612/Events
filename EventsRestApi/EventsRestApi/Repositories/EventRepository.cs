@@ -26,9 +26,9 @@ namespace EventsRestApi.Repositories
             return addingEvent;
         }
 
-        public bool Update(Guid id, Event newEvent)
+        public bool Update(Event newEvent)
         {
-            var updatingEvent = GetById(id);
+            var updatingEvent = GetById(newEvent.Id);
 
             if (updatingEvent == null)
             {

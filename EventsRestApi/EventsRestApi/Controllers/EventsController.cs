@@ -84,17 +84,15 @@ namespace EventsRestApi.Controllers
         {
             var createdBooking = await _bookingService.CreateBookingAsync(eventId, cancellationToken);
 
-            return createdBooking == null
-                ? NotFound($"Невозможно создать бронь, т.к. событие с Id: {eventId} не найдено либо уже завершилось.")
-                : AcceptedAtRoute(
+            if (createdBooking == null)
+            {
+                return NotFound($"Невозможно создать бронь, т.к. событие с Id: {eventId} не найдено либо уже завершилось.");
+            }
+
+            return AcceptedAtRoute(
                     routeName: "GetBookingById",
-                    routeValues: new { id = createdBooking.Id },
-                    value: new { 
-                        Message = $"Создана бронь для события.", 
-                        Id = createdBooking.Id,
-                        EventId = eventId,
-                        Status = createdBooking.Status
-                    });
+                    routeValues: new { controller = "Bookings", id = createdBooking.Id },
+                    value: createdBooking);
         }
     }
 }

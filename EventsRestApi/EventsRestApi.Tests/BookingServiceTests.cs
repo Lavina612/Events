@@ -2,6 +2,7 @@
 using EventsRestApi.Mappers;
 using EventsRestApi.Models;
 using EventsRestApi.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace EventsRestApi.Tests
@@ -17,7 +18,10 @@ namespace EventsRestApi.Tests
             _mockBookingRepository = new Mock<IBookingRepository>();
             _mockEventService = new Mock<IEventService>();
 
-            _bookingService = new BookingService(_mockBookingRepository.Object, _mockEventService.Object);
+            _bookingService = new BookingService(
+                _mockBookingRepository.Object, 
+                _mockEventService.Object,
+                NullLogger<BookingService>.Instance);
         }
 
         [Fact]
@@ -35,10 +39,12 @@ namespace EventsRestApi.Tests
 
             var expectedBookingDto = Mapper.MapToBookingResponseDto(booking);
 
-            _mockBookingRepository.Setup(mock => mock.GetById(bookingId)).Returns(booking);
+            _mockBookingRepository
+                .Setup(mock => mock.GetById(bookingId))
+                .Returns(booking);
 
             /*---ACT---*/
-            var result = await _bookingService.GetBookingByIdAsync(bookingId, It.IsAny<CancellationToken>());
+            var result = await _bookingService.GetBookingByIdAsync(bookingId, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.Equivalent(expectedBookingDto, result, true);
@@ -50,13 +56,42 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var bookingId = Guid.Empty;
 
-            _mockBookingRepository.Setup(mock => mock.GetById(bookingId)).Returns((Booking?)null);
+            _mockBookingRepository
+                .Setup(mock => mock.GetById(bookingId))
+                .Returns((Booking?)null);
 
             /*---ACT---*/
-            var result = await _bookingService.GetBookingByIdAsync(bookingId, It.IsAny<CancellationToken>());
+            var result = await _bookingService.GetBookingByIdAsync(bookingId, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetBookingByIdAsync_AfterChangingStatus_ReturnWithChangedStatus()
+        {
+            /*---ARRANGE---*/
+            var bookingId = new Guid("00000000-0000-0000-0000-000000000001");
+
+            var booking = new Booking(
+                bookingId,
+                new Guid("00000000-0000-0000-0000-000000000001"),
+                BookingStatus.Confirmed,
+                new DateTime(2026, 06, 01, 09, 01, 01),
+                new DateTime(2026, 06, 01, 09, 01, 03)
+                );
+
+            var expectedBookingDto = Mapper.MapToBookingResponseDto(booking);
+
+            _mockBookingRepository
+                .Setup(mock => mock.GetById(bookingId))
+                .Returns(booking);
+
+            /*---ACT---*/
+            var result = await _bookingService.GetBookingByIdAsync(bookingId, CancellationToken.None);
+
+            /*---ASSERT---*/
+            Assert.Equivalent(expectedBookingDto, result, true);
         }
 
         [Fact]
@@ -74,11 +109,16 @@ namespace EventsRestApi.Tests
 
             var expectedAddedBookingDto = Mapper.MapToBookingResponseDto(addedBooking);
 
-            _mockEventService.Setup(mock => mock.CanCreateBooking(eventId)).Returns(true);
-            _mockBookingRepository.Setup(mock => mock.Add(eventId)).Returns(addedBooking);
+            _mockEventService
+                .Setup(mock => mock.CanCreateBooking(eventId))
+                .Returns(true);
+
+            _mockBookingRepository
+                .Setup(mock => mock.Add(eventId))
+                .Returns(addedBooking);
 
             /*---ACT---*/
-            var result = await _bookingService.CreateBookingAsync(eventId, It.IsAny<CancellationToken>());
+            var result = await _bookingService.CreateBookingAsync(eventId, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.Equivalent(expectedAddedBookingDto, result, true);
@@ -90,17 +130,22 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var eventId = new Guid("00000000-0000-0000-0000-000000000001");
 
-            _mockEventService.Setup(mock => mock.CanCreateBooking(eventId)).Returns(true);
-            _mockBookingRepository.Setup(mock => mock.Add(eventId)).Returns(() => new Booking(
-                Guid.NewGuid(),
-                eventId,
-                BookingStatus.Pending,
-                new DateTime(2026, 06, 01, 09, 01, 01)
-                ));
+            _mockEventService
+                .Setup(mock => mock.CanCreateBooking(eventId))
+                .Returns(true);
+
+            _mockBookingRepository
+                .Setup(mock => mock.Add(eventId))
+                .Returns(() => new Booking(
+                    Guid.NewGuid(),
+                    eventId,
+                    BookingStatus.Pending,
+                    new DateTime(2026, 06, 01, 09, 01, 01)
+                    ));
 
             /*---ACT---*/
-            var firstResult = await _bookingService.CreateBookingAsync(eventId, It.IsAny<CancellationToken>());
-            var secondResult = await _bookingService.CreateBookingAsync(eventId, It.IsAny<CancellationToken>());
+            var firstResult = await _bookingService.CreateBookingAsync(eventId, CancellationToken.None);
+            var secondResult = await _bookingService.CreateBookingAsync(eventId, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.NotNull(firstResult);
@@ -117,10 +162,12 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var eventId = Guid.Empty;
 
-            _mockEventService.Setup(mock => mock.CanCreateBooking(eventId)).Returns(false);
+            _mockEventService
+                .Setup(mock => mock.CanCreateBooking(eventId))
+                .Returns(false);
 
             /*---ACT---*/
-            var result = await _bookingService.CreateBookingAsync(eventId, It.IsAny<CancellationToken>());
+            var result = await _bookingService.CreateBookingAsync(eventId, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.Null(result);
@@ -129,9 +176,11 @@ namespace EventsRestApi.Tests
         }
 
         [Fact]
-        public async Task ProcessPendingBookingsAsync_AfterFiveSeconds_CheckConfirmStatus()
+        public async Task ProcessPendingBookingsAsync_BookingsLessThanBunch_CheckConfirmStatusForAll()
         {
             /*---ARRANGE---*/
+            var processingBookingsCount = 5;
+
             var pendingBookings = new List<Booking>()
             {
                 new Booking(
@@ -146,16 +195,54 @@ namespace EventsRestApi.Tests
                     new DateTime(2026, 06, 02, 09, 02, 02))
             };
 
-            _mockBookingRepository.Setup(mock => mock.GetByStatus(BookingStatus.Pending)).Returns(pendingBookings);
+            _mockBookingRepository
+                .Setup(mock => mock.GetByStatus(BookingStatus.Pending, processingBookingsCount))
+                .Returns(pendingBookings);
 
             /*---ACT---*/
-            await _bookingService.ProcessPendingBookingsAsync(It.IsAny<CancellationToken>());
-
-            await Task.Delay(5000);
+            var result = await _bookingService.ProcessPendingBookingsBunchAsync(processingBookingsCount, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.Equal(BookingStatus.Confirmed, pendingBookings[0].Status);
             Assert.Equal(BookingStatus.Confirmed, pendingBookings[1].Status);
+            Assert.Equal(pendingBookings.Count, result);
+
+            _mockBookingRepository.Verify(mock => mock.Update(It.IsAny<Booking>()), Times.Exactly(pendingBookings.Count));
+        }
+
+        [Fact]
+        public async Task ProcessPendingBookingsAsync_BookingsMoreThanBunch_CheckConfirmStatusForFirst()
+        {
+            /*---ARRANGE---*/
+            var processingBookingsCount = 1;
+
+            var pendingBookings = new List<Booking>()
+            {
+                new Booking(
+                    new Guid("00000000-0000-0000-0000-000000000001"),
+                    new Guid("00000000-0000-0000-0000-000000000001"),
+                    BookingStatus.Pending,
+                    new DateTime(2026, 06, 01, 09, 01, 01)),
+                new Booking(
+                    new Guid("00000000-0000-0000-0000-000000000002"),
+                    new Guid("00000000-0000-0000-0000-000000000002"),
+                    BookingStatus.Pending,
+                    new DateTime(2026, 06, 02, 09, 02, 02))
+            };
+
+            _mockBookingRepository
+                .Setup(mock => mock.GetByStatus(BookingStatus.Pending, processingBookingsCount))
+                .Returns(pendingBookings.Take(processingBookingsCount).ToList());
+
+            /*---ACT---*/
+            var result = await _bookingService.ProcessPendingBookingsBunchAsync(processingBookingsCount, CancellationToken.None);
+
+            /*---ASSERT---*/
+            Assert.Equal(BookingStatus.Confirmed, pendingBookings[0].Status);
+            Assert.Equal(BookingStatus.Pending, pendingBookings[1].Status);
+            Assert.Equal(processingBookingsCount, result);
+
+            _mockBookingRepository.Verify(mock => mock.Update(It.IsAny<Booking>()), Times.Exactly(processingBookingsCount));
         }
     }
 }

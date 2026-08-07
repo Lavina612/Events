@@ -7,7 +7,7 @@ namespace EventsRestApi.Interfaces
         List<Event> Get();
         Event? GetById(Guid id);
         Event Add(Event addingEvent);
-        bool Update(Guid id, Event newEvent);
+        bool Update(Event newEvent);
         bool Delete(Guid id);
     }
 }

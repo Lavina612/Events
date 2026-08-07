@@ -41,7 +41,9 @@ namespace EventsRestApi.Tests
                 pageSize,
                 totalPages);
 
-            _mockEventRepository.Setup(mock => mock.Get()).Returns(allEvents);
+            _mockEventRepository
+                .Setup(mock => mock.Get())
+                .Returns(allEvents);
 
             /*---ACT---*/
             var result = _eventService.Get(null, null, null, page, pageSize);
@@ -68,7 +70,9 @@ namespace EventsRestApi.Tests
                 pageSize,
                 totalPages);
 
-            _mockEventRepository.Setup(mock => mock.Get()).Returns(allEvents);
+            _mockEventRepository
+                .Setup(mock => mock.Get())
+                .Returns(allEvents);
 
             /*---ACT---*/
             var result = _eventService.Get(titleParam, null, null, page, pageSize);
@@ -93,7 +97,9 @@ namespace EventsRestApi.Tests
                 pageSize,
                 totalPages);
 
-            _mockEventRepository.Setup(mock => mock.Get()).Returns(allEvents);
+            _mockEventRepository
+                .Setup(mock => mock.Get())
+                .Returns(allEvents);
 
             /*---ACT---*/
             var result = _eventService.Get(null, new DateTime(2026, 06, 3, 09, 03, 00), new DateTime(2026, 06, 9, 09, 04, 00), page, pageSize);
@@ -119,7 +125,9 @@ namespace EventsRestApi.Tests
                 pageSize,
                 totalPages);
 
-            _mockEventRepository.Setup(mock => mock.Get()).Returns(allEvents);
+            _mockEventRepository
+                .Setup(mock => mock.Get())
+                .Returns(allEvents);
 
             /*---ACT---*/
             var result = _eventService.Get("3", new DateTime(2026, 06, 3, 09, 03, 00), new DateTime(2026, 06, 9, 09, 04, 00), page, pageSize);
@@ -144,7 +152,9 @@ namespace EventsRestApi.Tests
                 pageSize,
                 totalPages);
 
-            _mockEventRepository.Setup(mock => mock.Get()).Returns(allEvents);
+            _mockEventRepository
+                .Setup(mock => mock.Get())
+                .Returns(allEvents);
 
             /*---ACT---*/
             var result = _eventService.Get(null, null, null, page, pageSize);
@@ -170,7 +180,9 @@ namespace EventsRestApi.Tests
                 pageSize,
                 totalPages);
 
-            _mockEventRepository.Setup(mock => mock.Get()).Returns([]);
+            _mockEventRepository
+                .Setup(mock => mock.Get())
+                .Returns([]);
 
             /*---ACT---*/
             var result = _eventService.Get(null, null, null, page, pageSize);
@@ -195,7 +207,9 @@ namespace EventsRestApi.Tests
                 pageSize,
                 totalPages);
 
-            _mockEventRepository.Setup(mock => mock.Get()).Returns(allEvents);
+            _mockEventRepository
+                .Setup(mock => mock.Get())
+                .Returns(allEvents);
 
             /*---ACT---*/
             var result = _eventService.Get(null, null, null, page, pageSize);
@@ -211,7 +225,9 @@ namespace EventsRestApi.Tests
             var id = allEventResponseDto[2].Id;
             var expected = allEventResponseDto[2];
 
-            _mockEventRepository.Setup(mock => mock.GetById(id)).Returns(allEvents[2]);
+            _mockEventRepository
+                .Setup(mock => mock.GetById(id))
+                .Returns(allEvents[2]);
 
             /*---ACT---*/
             var result = _eventService.GetById(id);
@@ -226,7 +242,9 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var id = Guid.Empty;
 
-            _mockEventRepository.Setup(mock => mock.GetById(id)).Returns((Event?)null);
+            _mockEventRepository
+                .Setup(mock => mock.GetById(id))
+                .Returns((Event?)null);
 
             /*---ACT---*/
             var result = _eventService.GetById(id);
@@ -255,7 +273,9 @@ namespace EventsRestApi.Tests
             var expectedAddedEvent = Mapper.MapToEvent(addingEventDto);
             expectedAddedEvent.Id = expectedEventDto.Id;
 
-            _mockEventRepository.Setup(mock => mock.Add(It.IsAny<Event>())).Returns(expectedAddedEvent);
+            _mockEventRepository
+                .Setup(mock => mock.Add(It.IsAny<Event>()))
+                .Returns(expectedAddedEvent);
 
             /*---ACT---*/
             var result = _eventService.Add(addingEventDto);
@@ -276,7 +296,9 @@ namespace EventsRestApi.Tests
                 new DateTime(2026, 06, 01, 09, 01, 00),
                 new DateTime(2026, 06, 01, 09, 01, 00).AddDays(5));
 
-            _mockEventRepository.Setup(mock => mock.Update(id, It.IsAny<Event>())).Returns(true);
+            _mockEventRepository
+                .Setup(mock => mock.Update(It.IsAny<Event>()))
+                .Returns(true);
 
             /*---ACT---*/
             var result = _eventService.Update(id, updatingEventDto);
@@ -297,7 +319,9 @@ namespace EventsRestApi.Tests
                 new DateTime(2026, 06, 01, 09, 01, 00),
                 new DateTime(2026, 06, 01, 09, 01, 00).AddDays(5));
 
-            _mockEventRepository.Setup(mock => mock.Update(id, It.IsAny<Event>())).Returns(false);
+            _mockEventRepository
+                .Setup(mock => mock.Update(It.IsAny<Event>()))
+                .Returns(false);
 
             /*---ACT---*/
             var result = _eventService.Update(id, updatingEventDto);
@@ -312,7 +336,9 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var id = allEvents.Last().Id;
 
-            _mockEventRepository.Setup(mock => mock.Delete(id)).Returns(true);
+            _mockEventRepository
+                .Setup(mock => mock.Delete(id))
+                .Returns(true);
 
             /*---ACT---*/
             var result = _eventService.Delete(id);
@@ -327,7 +353,9 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var id = Guid.Empty;
 
-            _mockEventRepository.Setup(mock => mock.Delete(id)).Returns(false);
+            _mockEventRepository
+                .Setup(mock => mock.Delete(id))
+                .Returns(false);
 
             /*---ACT---*/
             var result = _eventService.Delete(id);
@@ -347,7 +375,9 @@ namespace EventsRestApi.Tests
                    new DateTime(2026, 06, 01, 09, 01, 01),
                    DateTime.UtcNow.AddDays(1));
 
-            _mockEventRepository.Setup(mock => mock.GetById(currentEvent.Id)).Returns(currentEvent);
+            _mockEventRepository
+                .Setup(mock => mock.GetById(currentEvent.Id))
+                .Returns(currentEvent);
 
             /*---ACT---*/
             var result = _eventService.CanCreateBooking(currentEvent.Id);
@@ -362,7 +392,9 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var id = Guid.Empty;
 
-            _mockEventRepository.Setup(mock => mock.GetById(id)).Returns((Event?)null);
+            _mockEventRepository
+                .Setup(mock => mock.GetById(id))
+                .Returns((Event?)null);
 
             /*---ACT---*/
             var result = _eventService.CanCreateBooking(id);
@@ -382,7 +414,9 @@ namespace EventsRestApi.Tests
                    new DateTime(2026, 06, 01, 09, 01, 01),
                    DateTime.UtcNow.AddDays(-1));
 
-            _mockEventRepository.Setup(mock => mock.GetById(currentEvent.Id)).Returns(currentEvent);
+            _mockEventRepository
+                .Setup(mock => mock.GetById(currentEvent.Id))
+                .Returns(currentEvent);
 
             /*---ACT---*/
             var result = _eventService.CanCreateBooking(currentEvent.Id);

@@ -6,9 +6,9 @@ namespace EventsRestApi.Interfaces
     {
         List<Booking> Get();
         Booking? GetById(Guid id);
-        List<Booking> GetByStatus(BookingStatus status);
+        List<Booking> GetByStatus(BookingStatus status, int count);
         Booking Add(Guid eventId);
-        bool Update(Guid id, Booking newBooking);
+        bool Update(Booking newBooking);
         bool Delete(Guid id);
     }
 }

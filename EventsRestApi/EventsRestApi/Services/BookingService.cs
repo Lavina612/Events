@@ -11,12 +11,16 @@ namespace EventsRestApi.Services
         
         private readonly IEventService _eventService;
 
+        private readonly ILogger<BookingService> _logger;
+
         public BookingService(
             IBookingRepository bookingRepository,
-            IEventService eventService)
+            IEventService eventService,
+            ILogger<BookingService> logger)
         {
             _bookingRepository = bookingRepository;
             _eventService = eventService;
+            _logger = logger;
         }
 
         public async Task<BookingResponseDto?> GetBookingByIdAsync(Guid bookingId, CancellationToken cancellationToken)
@@ -40,17 +44,25 @@ namespace EventsRestApi.Services
             return Mapper.MapToBookingResponseDto(addedBooking);
         }
 
-        public async Task ProcessPendingBookingsAsync(CancellationToken cancellationToken)
+        public async Task<int> ProcessPendingBookingsBunchAsync(int count, CancellationToken cancellationToken)
         {
-            var pendingBookings = _bookingRepository.GetByStatus(BookingStatus.Pending);
+            var pendingBookings = _bookingRepository.GetByStatus(BookingStatus.Pending, count);
 
             foreach(var booking in pendingBookings)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 await Task.Delay(2000, cancellationToken);
 
                 booking.Status = BookingStatus.Confirmed;
                 booking.ProcessedAt = DateTime.UtcNow;
+
+                _bookingRepository.Update(booking);
+
+                _logger.LogInformation("Бронирование с Id: {BookingId} подтверждено.", booking.Id);
             }
+
+            return pendingBookings.Count;
         }
     }
 }

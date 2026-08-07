@@ -18,7 +18,9 @@ namespace EventsRestApi.Services
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"{nameof(BookingBackgroundService)} запущен.");
+            _logger.LogInformation("{ServiceName} запущен.", nameof(BookingBackgroundService));
+
+            var bunchCount = 5;
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -27,9 +29,12 @@ namespace EventsRestApi.Services
                     using var scope = _scopeFactory.CreateScope();
                     var bookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
                     
-                    await bookingService.ProcessPendingBookingsAsync(cancellationToken);
+                    var processedBookingsCount = await bookingService.ProcessPendingBookingsBunchAsync(bunchCount, cancellationToken);
 
-                    await Task.Delay(2000, cancellationToken);
+                    if (processedBookingsCount < bunchCount)
+                    {
+                        await Task.Delay(2000, cancellationToken);
+                    }
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
@@ -38,10 +43,11 @@ namespace EventsRestApi.Services
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Ошибка при обработке бронирования.");
+                    await Task.Delay(2000, cancellationToken);
                 }
             }
 
-            _logger.LogInformation($"{nameof(BookingBackgroundService)} остановлен.");
+            _logger.LogInformation("{ServiceName} остановлен.", nameof(BookingBackgroundService));
         }
     }
 }

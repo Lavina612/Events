@@ -69,7 +69,10 @@ namespace EventsRestApi.Services
 
         public bool Update(Guid id, EventRequestDto newEventDto)
         {
-            return _eventRepository.Update(id, Mapper.MapToEvent(newEventDto));
+            var newEvent = Mapper.MapToEvent(newEventDto);
+            newEvent.Id = id;
+
+            return _eventRepository.Update(newEvent);
         }
 
         public bool Delete(Guid id)
