@@ -8,5 +8,7 @@ namespace EventsRestApi.Interfaces
         Task<BookingResponseDto?> GetBookingByIdAsync(Guid bookingId);
 
         Task<BookingResponseDto?> CreateBookingAsync(Guid eventId);
+
+        Task ProcessPendingBookingsAsync(CancellationToken cancellationToken);
     }
 }

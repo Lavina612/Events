@@ -17,6 +17,11 @@ namespace EventsRestApi.Repositories
             return _bookings.FirstOrDefault(x => x.Id == id);
         }
 
+        public List<Booking> GetByStatus(BookingStatus status)
+        {
+            return _bookings.Where(x => x.Status == status).ToList();
+        }
+
         public Booking Add(Guid eventId)
         {
             var addingBooking = new Booking(

@@ -1,6 +1,7 @@
 ﻿using EventsRestApi.Dto.Response;
 using EventsRestApi.Interfaces;
 using EventsRestApi.Mappers;
+using EventsRestApi.Models;
 
 namespace EventsRestApi.Services
 {
@@ -39,6 +40,19 @@ namespace EventsRestApi.Services
             var addedBooking = _bookingRepository.Add(eventId);
 
             return Mapper.MapToBookingResponseDto(addedBooking);
+        }
+
+        public async Task ProcessPendingBookingsAsync(CancellationToken cancellationToken)
+        {
+            var pendingBookings = _bookingRepository.GetByStatus(BookingStatus.Pending);
+
+            foreach(var booking in pendingBookings)
+            {
+                await Task.Delay(2000, cancellationToken);
+
+                booking.Status = BookingStatus.Confirmed;
+                booking.ProcessedAt = DateTime.UtcNow;
+            }
         }
     }
 }
