@@ -76,5 +76,17 @@ namespace EventsRestApi.Services
         {
             return _eventRepository.Delete(id);
         }
+
+        public bool CanCreateBooking(Guid id)
+        {
+            var foundEvent = _eventRepository.GetById(id);
+
+            if (foundEvent == null)
+            {
+                return false;
+            }
+
+            return foundEvent.EndAt > DateTime.UtcNow;
+        }
     }
 }

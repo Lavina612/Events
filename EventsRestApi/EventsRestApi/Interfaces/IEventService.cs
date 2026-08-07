@@ -10,5 +10,6 @@ namespace EventsRestApi.Interfaces
         EventResponseDto Add(EventRequestDto addingEventDto);
         bool Update(Guid id, EventRequestDto newEventDto);
         bool Delete(Guid id);
+        bool CanCreateBooking(Guid id);
     }
 }

@@ -30,9 +30,7 @@ namespace EventsRestApi.Services
 
         public async Task<BookingResponseDto?> CreateBookingAsync(Guid eventId)
         {
-            var foundEvent = _eventService.GetById(eventId);
-
-            if (foundEvent == null || foundEvent.EndAt < DateTime.UtcNow)
+            if (!_eventService.CanCreateBooking(eventId))
             {
                 return null;
             }
