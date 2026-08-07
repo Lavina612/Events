@@ -16,9 +16,9 @@ namespace EventsRestApi.Controllers
         }
 
         [HttpGet("{id:guid}", Name = "GetBookingById")]
-        public async Task<ActionResult<BookingResponseDto>> GetById(Guid id)
+        public async Task<ActionResult<BookingResponseDto>> GetById(Guid id, CancellationToken cancellationToken)
         {
-            var foundBookingDto = await _bookingService.GetBookingByIdAsync(id);
+            var foundBookingDto = await _bookingService.GetBookingByIdAsync(id, cancellationToken);
 
             if (foundBookingDto == null)
             {

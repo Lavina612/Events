@@ -21,6 +21,7 @@ namespace EventsRestApi.Tests
             FillTestData();
 
             _mockEventRepository = new Mock<IEventRepository>();
+
             _eventService = new EventService(_mockEventRepository.Object);
         }
 
@@ -330,6 +331,61 @@ namespace EventsRestApi.Tests
 
             /*---ACT---*/
             var result = _eventService.Delete(id);
+
+            /*---ASSERT---*/
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void CanCreateBooking_WithExistingAndNotEndedEvent_ReturnTrue()
+        {
+            /*---ARRANGE---*/
+            var currentEvent = new Event(
+                   new Guid($"00000000-0000-0000-0000-000000000001"),
+                   $"Event 1",
+                   $"Description 1",
+                   new DateTime(2026, 06, 01, 09, 01, 01),
+                   DateTime.UtcNow.AddDays(1));
+
+            _mockEventRepository.Setup(mock => mock.GetById(currentEvent.Id)).Returns(currentEvent);
+
+            /*---ACT---*/
+            var result = _eventService.CanCreateBooking(currentEvent.Id);
+
+            /*---ASSERT---*/
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void CanCreateBooking_WithNonExistentEvent_ReturnFalse()
+        {
+            /*---ARRANGE---*/
+            var id = Guid.Empty;
+
+            _mockEventRepository.Setup(mock => mock.GetById(id)).Returns((Event?)null);
+
+            /*---ACT---*/
+            var result = _eventService.CanCreateBooking(id);
+
+            /*---ASSERT---*/
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void CanCreateBooking_WithEndedEvent_ReturnFalse()
+        {
+            /*---ARRANGE---*/
+            var currentEvent = new Event(
+                   new Guid($"00000000-0000-0000-0000-000000000001"),
+                   $"Event 1",
+                   $"Description 1",
+                   new DateTime(2026, 06, 01, 09, 01, 01),
+                   DateTime.UtcNow.AddDays(-1));
+
+            _mockEventRepository.Setup(mock => mock.GetById(currentEvent.Id)).Returns(currentEvent);
+
+            /*---ACT---*/
+            var result = _eventService.CanCreateBooking(currentEvent.Id);
 
             /*---ASSERT---*/
             Assert.False(result);

@@ -5,9 +5,9 @@ namespace EventsRestApi.Interfaces
 {
     public interface IBookingService
     {
-        Task<BookingResponseDto?> GetBookingByIdAsync(Guid bookingId);
+        Task<BookingResponseDto?> GetBookingByIdAsync(Guid bookingId, CancellationToken cancellationToken);
 
-        Task<BookingResponseDto?> CreateBookingAsync(Guid eventId);
+        Task<BookingResponseDto?> CreateBookingAsync(Guid eventId, CancellationToken cancellationToken);
 
         Task ProcessPendingBookingsAsync(CancellationToken cancellationToken);
     }

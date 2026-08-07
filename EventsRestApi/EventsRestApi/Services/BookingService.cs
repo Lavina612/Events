@@ -19,7 +19,7 @@ namespace EventsRestApi.Services
             _eventService = eventService;
         }
 
-        public async Task<BookingResponseDto?> GetBookingByIdAsync(Guid bookingId)
+        public async Task<BookingResponseDto?> GetBookingByIdAsync(Guid bookingId, CancellationToken cancellationToken)
         {
             var foundBooking = _bookingRepository.GetById(bookingId);
 
@@ -28,7 +28,7 @@ namespace EventsRestApi.Services
                 : Mapper.MapToBookingResponseDto(foundBooking);
         }
 
-        public async Task<BookingResponseDto?> CreateBookingAsync(Guid eventId)
+        public async Task<BookingResponseDto?> CreateBookingAsync(Guid eventId, CancellationToken cancellationToken)
         {
             if (!_eventService.CanCreateBooking(eventId))
             {

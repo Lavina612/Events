@@ -80,9 +80,9 @@ namespace EventsRestApi.Controllers
         }
 
         [HttpPost("{eventId:guid}/book")]
-        public async Task<ActionResult<BookingResponseDto>> CreateBooking(Guid eventId)
+        public async Task<ActionResult<BookingResponseDto>> CreateBooking(Guid eventId, CancellationToken cancellationToken)
         {
-            var createdBooking = await _bookingService.CreateBookingAsync(eventId);
+            var createdBooking = await _bookingService.CreateBookingAsync(eventId, cancellationToken);
 
             return createdBooking == null
                 ? NotFound($"Невозможно создать бронь, т.к. событие с Id: {eventId} не найдено либо уже завершилось.")
