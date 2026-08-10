@@ -2,10 +2,14 @@ using EventsRestApi.Interfaces;
 using EventsRestApi.Middlewares;
 using EventsRestApi.Repositories;
 using EventsRestApi.Services;
+using EventsRestApi.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+
+builder.Services.Configure<BookingBackgroundServiceSettings>(
+    builder.Configuration.GetSection(BookingBackgroundServiceSettings.SectionName));
 
 builder.Services.AddHostedService<BookingBackgroundService>();
 

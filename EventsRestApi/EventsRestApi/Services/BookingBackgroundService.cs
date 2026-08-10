@@ -1,4 +1,6 @@
 ﻿using EventsRestApi.Interfaces;
+using EventsRestApi.Settings;
+using Microsoft.Extensions.Options;
 
 namespace EventsRestApi.Services
 {
@@ -8,19 +10,23 @@ namespace EventsRestApi.Services
 
         private readonly IServiceScopeFactory _scopeFactory;
 
+        private readonly BookingBackgroundServiceSettings _settings;
+
         public BookingBackgroundService(
             ILogger<BookingBackgroundService> logger,
-            IServiceScopeFactory scopeFactory)
+            IServiceScopeFactory scopeFactory,
+            IOptions<BookingBackgroundServiceSettings> settings)
         {
             _logger = logger;
             _scopeFactory = scopeFactory;
+            _settings = settings.Value;
         }
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("{ServiceName} запущен.", nameof(BookingBackgroundService));
+            await Task.Yield();
 
-            var bunchCount = 5;
+            _logger.LogInformation("{ServiceName} запущен.", nameof(BookingBackgroundService));
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -28,12 +34,12 @@ namespace EventsRestApi.Services
                 {
                     using var scope = _scopeFactory.CreateScope();
                     var bookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
-                    
-                    var processedBookingsCount = await bookingService.ProcessPendingBookingsBunchAsync(bunchCount, cancellationToken);
 
-                    if (processedBookingsCount < bunchCount)
+                    var processedBookingsCount = await bookingService.ProcessPendingBookingsBunchAsync(_settings.BunchCount, cancellationToken);
+
+                    if (processedBookingsCount < _settings.BunchCount)
                     {
-                        await Task.Delay(2000, cancellationToken);
+                        await Task.Delay(_settings.DelayMilliseconds, cancellationToken);
                     }
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -43,7 +49,7 @@ namespace EventsRestApi.Services
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Ошибка при обработке бронирования.");
-                    await Task.Delay(2000, cancellationToken);
+                    await Task.Delay(_settings.DelayMilliseconds, cancellationToken);
                 }
             }
 
