@@ -80,7 +80,7 @@ namespace EventsRestApi.Services
             return _eventRepository.Delete(id);
         }
 
-        public bool CanCreateBooking(Guid id)
+        public bool IsEventStillValid(Guid id)
         {
             var foundEvent = _eventRepository.GetById(id);
 

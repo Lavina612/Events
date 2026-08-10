@@ -380,7 +380,7 @@ namespace EventsRestApi.Tests
                 .Returns(currentEvent);
 
             /*---ACT---*/
-            var result = _eventService.CanCreateBooking(currentEvent.Id);
+            var result = _eventService.IsEventStillValid(currentEvent.Id);
 
             /*---ASSERT---*/
             Assert.True(result);
@@ -397,7 +397,7 @@ namespace EventsRestApi.Tests
                 .Returns((Event?)null);
 
             /*---ACT---*/
-            var result = _eventService.CanCreateBooking(id);
+            var result = _eventService.IsEventStillValid(id);
 
             /*---ASSERT---*/
             Assert.False(result);
@@ -419,7 +419,7 @@ namespace EventsRestApi.Tests
                 .Returns(currentEvent);
 
             /*---ACT---*/
-            var result = _eventService.CanCreateBooking(currentEvent.Id);
+            var result = _eventService.IsEventStillValid(currentEvent.Id);
 
             /*---ASSERT---*/
             Assert.False(result);

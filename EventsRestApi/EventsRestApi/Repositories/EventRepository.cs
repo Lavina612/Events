@@ -7,9 +7,9 @@ namespace EventsRestApi.Repositories
     {
         private static readonly List<Event> _events = [];
 
-        public List<Event> Get()
+        public IReadOnlyList<Event> Get()
         {
-            return _events;
+            return _events.AsReadOnly();
         }
 
         public Event? GetById(Guid id)

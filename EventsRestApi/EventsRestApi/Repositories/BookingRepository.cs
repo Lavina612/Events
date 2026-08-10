@@ -7,9 +7,9 @@ namespace EventsRestApi.Repositories
     {
         private static readonly List<Booking> _bookings = [];
 
-        public List<Booking> Get()
+        public IReadOnlyList<Booking> Get()
         {
-            return _bookings;
+            return _bookings.AsReadOnly();
         }
 
         public Booking? GetById(Guid id)
@@ -17,9 +17,14 @@ namespace EventsRestApi.Repositories
             return _bookings.FirstOrDefault(x => x.Id == id);
         }
 
-        public List<Booking> GetByStatus(BookingStatus status, int count)
+        public IReadOnlyList<Booking> GetByStatus(BookingStatus status, int count)
         {
-            return _bookings.Where(x => x.Status == status).Take(count).ToList();
+            return _bookings
+                .Where(x => x.Status == status)
+                .OrderBy(x => x.CreatedAt)
+                .Take(count)
+                .ToList()
+                .AsReadOnly();
         }
 
         public Booking Add(Guid eventId)

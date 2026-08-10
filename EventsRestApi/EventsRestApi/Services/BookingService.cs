@@ -8,7 +8,7 @@ namespace EventsRestApi.Services
     public class BookingService : IBookingService
     {
         private readonly IBookingRepository _bookingRepository;
-        
+
         private readonly IEventService _eventService;
 
         private readonly ILogger<BookingService> _logger;
@@ -34,7 +34,7 @@ namespace EventsRestApi.Services
 
         public async Task<BookingResponseDto?> CreateBookingAsync(Guid eventId, CancellationToken cancellationToken)
         {
-            if (!_eventService.CanCreateBooking(eventId))
+            if (!_eventService.IsEventStillValid(eventId))
             {
                 return null;
             }
@@ -48,18 +48,25 @@ namespace EventsRestApi.Services
         {
             var pendingBookings = _bookingRepository.GetByStatus(BookingStatus.Pending, count);
 
-            foreach(var booking in pendingBookings)
+            foreach (var booking in pendingBookings)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 await Task.Delay(2000, cancellationToken);
 
-                booking.Status = BookingStatus.Confirmed;
+                booking.Status = _eventService.IsEventStillValid(booking.EventId)
+                    ? BookingStatus.Confirmed
+                    : BookingStatus.Rejected;
+
                 booking.ProcessedAt = DateTime.UtcNow;
 
                 _bookingRepository.Update(booking);
 
-                _logger.LogInformation("Бронирование с Id: {BookingId} подтверждено.", booking.Id);
+                _logger.LogInformation(
+                    "{ProcessedAt}: Бронирование с Id: {BookingId} обработано: {Status}.",
+                    booking.ProcessedAt,
+                    booking.Id,
+                    booking.Status);
             }
 
             return pendingBookings.Count;

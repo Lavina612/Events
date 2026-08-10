@@ -1,6 +1,5 @@
 ﻿using EventsRestApi.Exceptions;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 
 namespace EventsRestApi.Middlewares
 {
@@ -53,6 +52,11 @@ namespace EventsRestApi.Middlewares
                 Status = statusCode,
                 Detail = ex.Message
             };
+
+            if (ex is AppValidationException ave)
+            {
+                error.Extensions["errors"] = ave.Errors;
+            }
 
             await httpContext.Response.WriteAsJsonAsync(error);
         }

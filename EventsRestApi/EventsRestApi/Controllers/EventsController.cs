@@ -23,8 +23,8 @@ namespace EventsRestApi.Controllers
 
         [HttpGet]
         public ActionResult<PaginatedResult<EventResponseDto>> GetAll(
-            [FromQuery] string? title, 
-            [FromQuery] DateTime? from, 
+            [FromQuery] string? title,
+            [FromQuery] DateTime? from,
             [FromQuery] DateTime? to,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
@@ -89,10 +89,11 @@ namespace EventsRestApi.Controllers
                 return NotFound($"Невозможно создать бронь, т.к. событие с Id: {eventId} не найдено либо уже завершилось.");
             }
 
-            return AcceptedAtRoute(
-                    routeName: "GetBookingById",
-                    routeValues: new { controller = "Bookings", id = createdBooking.Id },
-                    value: createdBooking);
+            return AcceptedAtAction(
+                actionName: "GetById",
+                controllerName: "Bookings",
+                routeValues: new { id = createdBooking.Id },
+                value: createdBooking);
         }
     }
 }

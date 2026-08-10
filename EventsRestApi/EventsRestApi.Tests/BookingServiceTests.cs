@@ -19,7 +19,7 @@ namespace EventsRestApi.Tests
             _mockEventService = new Mock<IEventService>();
 
             _bookingService = new BookingService(
-                _mockBookingRepository.Object, 
+                _mockBookingRepository.Object,
                 _mockEventService.Object,
                 NullLogger<BookingService>.Instance);
         }
@@ -110,7 +110,7 @@ namespace EventsRestApi.Tests
             var expectedAddedBookingDto = Mapper.MapToBookingResponseDto(addedBooking);
 
             _mockEventService
-                .Setup(mock => mock.CanCreateBooking(eventId))
+                .Setup(mock => mock.IsEventStillValid(eventId))
                 .Returns(true);
 
             _mockBookingRepository
@@ -131,7 +131,7 @@ namespace EventsRestApi.Tests
             var eventId = new Guid("00000000-0000-0000-0000-000000000001");
 
             _mockEventService
-                .Setup(mock => mock.CanCreateBooking(eventId))
+                .Setup(mock => mock.IsEventStillValid(eventId))
                 .Returns(true);
 
             _mockBookingRepository
@@ -152,7 +152,7 @@ namespace EventsRestApi.Tests
             Assert.NotNull(secondResult);
             Assert.NotEqual(firstResult.Id, secondResult.Id);
 
-            _mockEventService.Verify(mock => mock.CanCreateBooking(eventId), Times.Exactly(2));
+            _mockEventService.Verify(mock => mock.IsEventStillValid(eventId), Times.Exactly(2));
             _mockBookingRepository.Verify(mock => mock.Add(eventId), Times.Exactly(2));
         }
 
@@ -163,7 +163,7 @@ namespace EventsRestApi.Tests
             var eventId = Guid.Empty;
 
             _mockEventService
-                .Setup(mock => mock.CanCreateBooking(eventId))
+                .Setup(mock => mock.IsEventStillValid(eventId))
                 .Returns(false);
 
             /*---ACT---*/
