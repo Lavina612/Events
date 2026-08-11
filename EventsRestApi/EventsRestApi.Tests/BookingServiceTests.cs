@@ -3,24 +3,31 @@ using EventsRestApi.Mappers;
 using EventsRestApi.Models;
 using EventsRestApi.Services;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 
 namespace EventsRestApi.Tests
 {
     public class BookingServiceTests
     {
+        private readonly DateTimeOffset fixedTime = new DateTimeOffset(2026, 06, 01, 09, 01, 01, TimeSpan.Zero);
+
         private readonly BookingService _bookingService;
         private readonly Mock<IBookingRepository> _mockBookingRepository;
         private readonly Mock<IEventService> _mockEventService;
 
         public BookingServiceTests()
         {
+            var fakeTimeProvider = new FakeTimeProvider();
+            fakeTimeProvider.SetUtcNow(fixedTime);
+
             _mockBookingRepository = new Mock<IBookingRepository>();
             _mockEventService = new Mock<IEventService>();
 
             _bookingService = new BookingService(
                 _mockBookingRepository.Object,
                 _mockEventService.Object,
+                fakeTimeProvider,
                 NullLogger<BookingService>.Instance);
         }
 

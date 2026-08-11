@@ -11,15 +11,19 @@ namespace EventsRestApi.Services
 
         private readonly IEventService _eventService;
 
+        private readonly TimeProvider _timeProvider;
+
         private readonly ILogger<BookingService> _logger;
 
         public BookingService(
             IBookingRepository bookingRepository,
             IEventService eventService,
+            TimeProvider timeProvider,
             ILogger<BookingService> logger)
         {
             _bookingRepository = bookingRepository;
             _eventService = eventService;
+            _timeProvider = timeProvider;
             _logger = logger;
         }
 
@@ -58,7 +62,7 @@ namespace EventsRestApi.Services
                     ? BookingStatus.Confirmed
                     : BookingStatus.Rejected;
 
-                booking.ProcessedAt = DateTime.UtcNow;
+                booking.ProcessedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
                 _bookingRepository.Update(booking);
 

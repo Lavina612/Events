@@ -4,25 +4,31 @@ using EventsRestApi.Interfaces;
 using EventsRestApi.Mappers;
 using EventsRestApi.Models;
 using EventsRestApi.Services;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 
 namespace EventsRestApi.Tests
 {
     public class EventServiceTests
     {
-        private readonly EventService _eventService;
-        private readonly Mock<IEventRepository> _mockEventRepository;
+        private readonly DateTimeOffset fixedTime = new DateTimeOffset(2026, 06, 01, 09, 01, 01, TimeSpan.Zero);
 
         private readonly List<Event> allEvents = [];
         private readonly List<EventResponseDto> allEventResponseDto = [];
+
+        private readonly EventService _eventService;
+        private readonly Mock<IEventRepository> _mockEventRepository;
 
         public EventServiceTests()
         {
             FillTestData();
 
+            var fakeTimeProvider = new FakeTimeProvider();
+            fakeTimeProvider.SetUtcNow(fixedTime);
+
             _mockEventRepository = new Mock<IEventRepository>();
 
-            _eventService = new EventService(_mockEventRepository.Object);
+            _eventService = new EventService(_mockEventRepository.Object, fakeTimeProvider);
         }
 
         [Fact]

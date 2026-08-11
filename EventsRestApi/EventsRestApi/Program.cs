@@ -18,6 +18,8 @@ builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 
+builder.Services.AddSingleton(TimeProvider.System);
+
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();

@@ -7,6 +7,13 @@ namespace EventsRestApi.Repositories
     {
         private static readonly List<Booking> _bookings = [];
 
+        private readonly TimeProvider _timeProvider;
+
+        public BookingRepository(TimeProvider timeProvider)
+        {
+            _timeProvider = timeProvider;
+        }
+
         public IReadOnlyList<Booking> Get()
         {
             return _bookings.AsReadOnly();
@@ -33,7 +40,7 @@ namespace EventsRestApi.Repositories
                 Guid.NewGuid(),
                 eventId,
                 BookingStatus.Pending,
-                DateTime.UtcNow);
+                _timeProvider.GetUtcNow().UtcDateTime);
 
             _bookings.Add(addingBooking);
 

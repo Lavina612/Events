@@ -9,9 +9,14 @@ namespace EventsRestApi.Services
     {
         private readonly IEventRepository _eventRepository;
 
-        public EventService(IEventRepository eventRepository)
+        private readonly TimeProvider _timeProvider;
+
+        public EventService(
+            IEventRepository eventRepository,
+            TimeProvider timeProvider)
         {
             _eventRepository = eventRepository;
+            _timeProvider = timeProvider;
         }
 
         public PaginatedResult<EventResponseDto> Get(string? title, DateTime? from, DateTime? to, int page, int pageSize)
@@ -89,7 +94,7 @@ namespace EventsRestApi.Services
                 return false;
             }
 
-            return foundEvent.EndAt > DateTime.UtcNow;
+            return foundEvent.EndAt > _timeProvider.GetUtcNow().UtcDateTime;
         }
     }
 }
