@@ -66,7 +66,6 @@ namespace EventsRestApi.Middlewares
             return ex switch
             {
                 AppValidationException ve => StatusCodes.Status400BadRequest,
-                NotFoundException ne => StatusCodes.Status404NotFound,
                 _ => StatusCodes.Status500InternalServerError
             };
         }

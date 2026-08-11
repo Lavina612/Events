@@ -5,7 +5,7 @@ namespace EventsRestApi.Repositories
 {
     public class BookingRepository : IBookingRepository
     {
-        private static readonly List<Booking> _bookings = [];
+        private readonly List<Booking> _bookings = [];
 
         private readonly TimeProvider _timeProvider;
 

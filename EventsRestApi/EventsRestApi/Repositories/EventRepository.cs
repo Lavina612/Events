@@ -5,7 +5,7 @@ namespace EventsRestApi.Repositories
 {
     public class EventRepository : IEventRepository
     {
-        private static readonly List<Event> _events = [];
+        private readonly List<Event> _events = [];
 
         public IReadOnlyList<Event> Get()
         {

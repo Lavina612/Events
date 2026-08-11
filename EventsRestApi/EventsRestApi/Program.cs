@@ -14,10 +14,10 @@ builder.Services.Configure<BookingBackgroundServiceSettings>(
 builder.Services.AddHostedService<BookingBackgroundService>();
 
 builder.Services.AddScoped<IEventService, EventService>();
-builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddScoped<IBookingService, BookingService>();
-builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 
+builder.Services.AddSingleton<IEventRepository, EventRepository>();
+builder.Services.AddSingleton<IBookingRepository, BookingRepository>();
 builder.Services.AddSingleton(TimeProvider.System);
 
 builder.Services.AddSwaggerGen();
