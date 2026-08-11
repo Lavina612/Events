@@ -50,13 +50,15 @@ namespace EventsRestApi.Services
 
         public async Task<int> ProcessPendingBookingsBunchAsync(int count, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var pendingBookings = _bookingRepository.GetByStatus(BookingStatus.Pending, count);
 
             foreach (var booking in pendingBookings)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                await Task.Delay(2000, cancellationToken);
+                await Task.Delay(TimeSpan.FromSeconds(2), _timeProvider, cancellationToken);
 
                 booking.Status = _eventService.IsEventStillValid(booking.EventId)
                     ? BookingStatus.Confirmed

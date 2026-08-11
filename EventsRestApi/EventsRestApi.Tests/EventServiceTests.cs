@@ -11,7 +11,7 @@ namespace EventsRestApi.Tests
 {
     public class EventServiceTests
     {
-        private readonly DateTimeOffset fixedTime = new DateTimeOffset(2026, 06, 01, 09, 01, 01, TimeSpan.Zero);
+        private readonly DateTimeOffset fixedTime = new DateTimeOffset(2026, 06, 05, 09, 05, 05, TimeSpan.Zero);
 
         private readonly List<Event> allEvents = [];
         private readonly List<EventResponseDto> allEventResponseDto = [];
@@ -21,10 +21,10 @@ namespace EventsRestApi.Tests
 
         public EventServiceTests()
         {
-            FillTestData();
-
             var fakeTimeProvider = new FakeTimeProvider();
             fakeTimeProvider.SetUtcNow(fixedTime);
+
+            FillTestData();
 
             _mockEventRepository = new Mock<IEventRepository>();
 
@@ -93,11 +93,16 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var page = 1;
             var pageSize = int.MaxValue;
+
+            //Дата startAt высчитывается относительно fixedTime: 2026.06.03 09:03:00
+            var startAt = fixedTime.AddDays(-2).AddMinutes(-2).AddSeconds(-5).UtcDateTime;
+            var endAt = startAt.AddDays(6).AddMinutes(4).AddSeconds(4);
+
             List<EventResponseDto> expectedEventsDto = allEventResponseDto[2..4];
             var totalPages = (expectedEventsDto.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<EventResponseDto>(
-                allEventResponseDto[2..4],
+                expectedEventsDto,
                 expectedEventsDto.Count,
                 page,
                 pageSize,
@@ -108,7 +113,7 @@ namespace EventsRestApi.Tests
                 .Returns(allEvents);
 
             /*---ACT---*/
-            var result = _eventService.Get(null, new DateTime(2026, 06, 3, 09, 03, 00), new DateTime(2026, 06, 9, 09, 04, 00), page, pageSize);
+            var result = _eventService.Get(null, startAt, endAt, page, pageSize);
 
             /*---ASSERT---*/
             Assert.Equal(expected.ItemsForPage.Select(x => x.Id), result.ItemsForPage.Select(x => x.Id));
@@ -121,11 +126,16 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var page = 1;
             var pageSize = int.MaxValue;
+
+            //Дата startAt высчитывается относительно fixedTime: 2026.06.03 09:03:00
+            var startAt = fixedTime.AddDays(-2).AddMinutes(-2).AddSeconds(-5).UtcDateTime;
+            var endAt = startAt.AddDays(6).AddMinutes(4).AddSeconds(4);
+
             List<EventResponseDto> expectedEventsDto = [allEventResponseDto[2]];
             var totalPages = (expectedEventsDto.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<EventResponseDto>(
-                [allEventResponseDto[2]],
+                expectedEventsDto,
                 expectedEventsDto.Count,
                 page,
                 pageSize,
@@ -136,7 +146,7 @@ namespace EventsRestApi.Tests
                 .Returns(allEvents);
 
             /*---ACT---*/
-            var result = _eventService.Get("3", new DateTime(2026, 06, 3, 09, 03, 00), new DateTime(2026, 06, 9, 09, 04, 00), page, pageSize);
+            var result = _eventService.Get("3", startAt, endAt, page, pageSize);
 
             /*---ASSERT---*/
             Assert.Equivalent(expected, result, true);
@@ -198,7 +208,7 @@ namespace EventsRestApi.Tests
         }
 
         [Fact]
-        public void GetAll_PageMoreThanTotalPages_ReturnEmptyPage()
+        public void GetAll_WithPageMoreThanTotalPages_ReturnEmptyPage()
         {
             /*---ARRANGE---*/
             var page = 10;
@@ -263,14 +273,18 @@ namespace EventsRestApi.Tests
         public void Add_CorrectEventDto_EventIdWasChanged()
         {
             /*---ARRANGE---*/
+            //Дата startAt высчитывается относительно fixedTime: 2026.06.06 09:06:00
+            var startAt = fixedTime.AddDays(1).AddMinutes(1).UtcDateTime;
+            var endAt = startAt.AddDays(5);
+
             var addingEventDto = new EventRequestDto(
                 $"Event 6",
                 $"Description 6",
-                new DateTime(2026, 06, 06, 09, 06, 00),
-                new DateTime(2026, 06, 06, 09, 06, 00).AddDays(5));
+                startAt,
+                endAt);
 
             var expectedEventDto = new EventResponseDto(
-                new Guid($"00000000-0000-0000-0000-000000000006"),
+                new Guid($"E0000000-0000-0000-0000-000000000006"),
                 addingEventDto.Title,
                 addingEventDto.Description,
                 addingEventDto.StartAt,
@@ -293,20 +307,20 @@ namespace EventsRestApi.Tests
         public void Update_WithExistingId_ReturnTrue()
         {
             /*---ARRANGE---*/
-            var id = allEvents[0].Id;
+            var updatingEvent = allEvents[0];
 
             var updatingEventDto = new EventRequestDto(
-                $"Event New",
-                $"Description 1",
-                new DateTime(2026, 06, 01, 09, 01, 00),
-                new DateTime(2026, 06, 01, 09, 01, 00).AddDays(5));
+                updatingEvent.Title + "New",
+                updatingEvent.Description + "New",
+                updatingEvent.StartAt.AddDays(1),
+                updatingEvent.EndAt.AddDays(1));
 
             _mockEventRepository
                 .Setup(mock => mock.Update(It.IsAny<Event>()))
                 .Returns(true);
 
             /*---ACT---*/
-            var result = _eventService.Update(id, updatingEventDto);
+            var result = _eventService.Update(updatingEvent.Id, updatingEventDto);
 
             /*---ASSERT---*/
             Assert.True(result);
@@ -318,11 +332,15 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var id = Guid.Empty;
 
+            //Дата startAt высчитывается относительно fixedTime: 2026.06.01 09:01:00
+            var startAt = fixedTime.AddDays(-4).AddMinutes(-4).UtcDateTime;
+            var endAt = startAt.AddDays(5);
+
             var updatingEventDto = new EventRequestDto(
                 $"Event New",
                 $"Description 1",
-                new DateTime(2026, 06, 01, 09, 01, 00),
-                new DateTime(2026, 06, 01, 09, 01, 00).AddDays(5));
+                startAt,
+                endAt);
 
             _mockEventRepository
                 .Setup(mock => mock.Update(It.IsAny<Event>()))
@@ -370,15 +388,10 @@ namespace EventsRestApi.Tests
         }
 
         [Fact]
-        public void CanCreateBooking_WithExistingAndNotEndedEvent_ReturnTrue()
+        public void IsEventStillValid_WithExistingAndNotEndedEvent_ReturnTrue()
         {
             /*---ARRANGE---*/
-            var currentEvent = new Event(
-                   new Guid($"00000000-0000-0000-0000-000000000001"),
-                   $"Event 1",
-                   $"Description 1",
-                   new DateTime(2026, 06, 01, 09, 01, 01),
-                   DateTime.UtcNow.AddDays(1));
+            var currentEvent = allEvents[0];
 
             _mockEventRepository
                 .Setup(mock => mock.GetById(currentEvent.Id))
@@ -392,7 +405,7 @@ namespace EventsRestApi.Tests
         }
 
         [Fact]
-        public void CanCreateBooking_WithNonExistentEvent_ReturnFalse()
+        public void IsEventStillValid_WithNonExistentEvent_ReturnFalse()
         {
             /*---ARRANGE---*/
             var id = Guid.Empty;
@@ -409,22 +422,22 @@ namespace EventsRestApi.Tests
         }
 
         [Fact]
-        public void CanCreateBooking_WithEndedEvent_ReturnFalse()
+        public void IsEventStillValid_WithEndedEvent_ReturnFalse()
         {
             /*---ARRANGE---*/
-            var currentEvent = new Event(
-                   new Guid($"00000000-0000-0000-0000-000000000001"),
-                   $"Event 1",
-                   $"Description 1",
-                   new DateTime(2026, 06, 01, 09, 01, 01),
-                   DateTime.UtcNow.AddDays(-1));
+            var endedEvent = new Event(
+                allEvents[0].Id,
+                allEvents[0].Title,
+                allEvents[0].Description,
+                allEvents[0].StartAt,
+                fixedTime.AddDays(-1).UtcDateTime);
 
             _mockEventRepository
-                .Setup(mock => mock.GetById(currentEvent.Id))
-                .Returns(currentEvent);
+                .Setup(mock => mock.GetById(endedEvent.Id))
+                .Returns(endedEvent);
 
             /*---ACT---*/
-            var result = _eventService.IsEventStillValid(currentEvent.Id);
+            var result = _eventService.IsEventStillValid(endedEvent.Id);
 
             /*---ASSERT---*/
             Assert.False(result);
@@ -436,15 +449,19 @@ namespace EventsRestApi.Tests
             var description = "Description";
             var eventCount = 5;
             Event currentEvent;
+            DateTime startAt;
 
             for (int i = 1; i <= eventCount; i++)
             {
+                //Дата startAt высчитывается относительно fixedTime: 2026.06.01-05 09:01-05:01-05
+                startAt = fixedTime.UtcDateTime.AddDays(i - eventCount).AddMinutes(i - eventCount).AddSeconds(i - eventCount);
+
                 currentEvent = new Event(
-                    new Guid($"00000000-0000-0000-0000-00000000000{i}"),
+                    new Guid($"E0000000-0000-0000-0000-00000000000{i}"),
                     $"{title} {i}",
                     $"{description} {i}",
-                    new DateTime(2026, 06, i % 28, 09, i % 60, 00),
-                    new DateTime(2026, 06, i % 28, 09, i % 60, 00).AddDays(eventCount));
+                    startAt,
+                    startAt.AddDays(eventCount));
 
                 allEvents.Add(currentEvent);
 
