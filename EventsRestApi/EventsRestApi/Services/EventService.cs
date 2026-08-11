@@ -67,15 +67,16 @@ namespace EventsRestApi.Services
 
         public EventResponseDto Add(EventRequestDto addingEventDto)
         {
-            var addedEvent = _eventRepository.Add(Mapper.MapToEvent(addingEventDto));
+            var eventId = Guid.NewGuid();
+
+            var addedEvent = _eventRepository.Add(Mapper.MapToEvent(eventId, addingEventDto));
 
             return Mapper.MapToEventResponseDto(addedEvent);
         }
 
         public bool Update(Guid id, EventRequestDto newEventDto)
         {
-            var newEvent = Mapper.MapToEvent(newEventDto);
-            newEvent.Id = id;
+            var newEvent = Mapper.MapToEvent(id, newEventDto);
 
             return _eventRepository.Update(newEvent);
         }

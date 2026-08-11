@@ -2,18 +2,18 @@
 
 namespace EventsRestApi.Dto.Request
 {
-    public class EventRequestDto : IValidatableObject
+    public record EventRequestDto : IValidatableObject
     {
         [Required(ErrorMessage = "Название мероприятия обязательно для заполнения.")]
-        public string Title { get; set; } = string.Empty;
+        public string Title { get; init; } = string.Empty;
 
-        public string? Description { get; set; }
+        public string? Description { get; init; }
 
         [Required(ErrorMessage = "Дата начала мероприятия обязательна для заполнения.")]
-        public DateTime StartAt { get; set; }
+        public DateTime StartAt { get; init; }
 
         [Required(ErrorMessage = "Дата окончания мероприятия обязательна для заполнения.")]
-        public DateTime EndAt { get; set; }
+        public DateTime EndAt { get; init; }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
@@ -25,8 +25,6 @@ namespace EventsRestApi.Dto.Request
                 );
             }
         }
-
-        public EventRequestDto() { }
 
         public EventRequestDto(
             string title,

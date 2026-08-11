@@ -6,10 +6,10 @@ namespace EventsRestApi.Mappers
 {
     public static class Mapper
     {
-        public static Event MapToEvent(EventRequestDto eventDto)
+        public static Event MapToEvent(Guid eventId, EventRequestDto eventDto)
         {
             return new Event(
-                Guid.Empty,
+                eventId,
                 eventDto.Title,
                 eventDto.Description,
                 eventDto.StartAt,

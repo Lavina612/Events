@@ -19,8 +19,6 @@ namespace EventsRestApi.Repositories
 
         public Event Add(Event addingEvent)
         {
-            addingEvent.Id = Guid.NewGuid();
-
             _events.Add(addingEvent);
 
             return addingEvent;
