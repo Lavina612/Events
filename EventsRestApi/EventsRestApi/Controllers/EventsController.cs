@@ -2,6 +2,7 @@
 using EventsRestApi.Dto.Response;
 using EventsRestApi.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace EventsRestApi.Controllers
 {
@@ -26,8 +27,8 @@ namespace EventsRestApi.Controllers
             [FromQuery] string? title,
             [FromQuery] DateTime? from,
             [FromQuery] DateTime? to,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery][Range(1, int.MaxValue, ErrorMessage = "Номер страницы должен быть положительным.")] int page = 1,
+            [FromQuery][Range(1, 100, ErrorMessage = "Размер страницы должен быть от 1 до 100.")] int pageSize = 10)
         {
             return _eventService.Get(title, from, to, page, pageSize);
         }

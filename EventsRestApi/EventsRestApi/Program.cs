@@ -3,10 +3,12 @@ using EventsRestApi.Middlewares;
 using EventsRestApi.Repositories;
 using EventsRestApi.Services;
 using EventsRestApi.Settings;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(x =>
+    x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.Configure<BookingBackgroundServiceSettings>(
     builder.Configuration.GetSection(BookingBackgroundServiceSettings.SectionName));
