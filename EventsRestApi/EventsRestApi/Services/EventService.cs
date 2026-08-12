@@ -1,5 +1,7 @@
-﻿using EventsRestApi.Dto;
+﻿using EventsRestApi.Dto.Request;
+using EventsRestApi.Dto.Response;
 using EventsRestApi.Interfaces;
+using EventsRestApi.Mappers;
 
 namespace EventsRestApi.Services
 {
@@ -7,12 +9,17 @@ namespace EventsRestApi.Services
     {
         private readonly IEventRepository _eventRepository;
 
-        public EventService(IEventRepository eventRepository)
+        private readonly TimeProvider _timeProvider;
+
+        public EventService(
+            IEventRepository eventRepository,
+            TimeProvider timeProvider)
         {
             _eventRepository = eventRepository;
+            _timeProvider = timeProvider;
         }
 
-        public PaginatedResult<EventDto> Get(string? title, DateTime? from, DateTime? to, int page, int pageSize)
+        public PaginatedResult<EventResponseDto> Get(string? title, DateTime? from, DateTime? to, int page, int pageSize)
         {
             var filteredEventsEnumerable = _eventRepository.Get().AsEnumerable();
 
@@ -41,38 +48,54 @@ namespace EventsRestApi.Services
                 .Skip(pageSize * (page - 1))
                 .Take(pageSize);
 
-            return new PaginatedResult<EventDto>(
-                filteredEventsForPageEnumerable.Select(EventMapper.MapToEventDto).ToList(),
+            return new PaginatedResult<EventResponseDto>(
+                filteredEventsForPageEnumerable.Select(Mapper.MapToEventResponseDto).ToList(),
                 totalFilteredEventsCount,
                 page,
                 pageSize,
                 totalPages);
         }
 
-        public EventDto? GetById(int id)
+        public EventResponseDto? GetById(Guid id)
         {
             var foundEvent = _eventRepository.GetById(id);
 
             return foundEvent == null
                 ? null
-                : EventMapper.MapToEventDto(foundEvent);
+                : Mapper.MapToEventResponseDto(foundEvent);
         }
 
-        public EventDto Add(EventDto addingEventDto)
+        public EventResponseDto Add(EventRequestDto addingEventDto)
         {
-            var addedEvent = _eventRepository.Add(EventMapper.MapToEvent(addingEventDto));
+            var eventId = Guid.NewGuid();
 
-            return EventMapper.MapToEventDto(addedEvent);
+            var addedEvent = _eventRepository.Add(Mapper.MapToEvent(eventId, addingEventDto));
+
+            return Mapper.MapToEventResponseDto(addedEvent);
         }
 
-        public bool Update(int id, EventDto newEventDto)
+        public bool Update(Guid id, EventRequestDto newEventDto)
         {
-            return _eventRepository.Update(id, EventMapper.MapToEvent(newEventDto));
+            var newEvent = Mapper.MapToEvent(id, newEventDto);
+
+            return _eventRepository.Update(newEvent);
         }
 
-        public bool Delete(int id)
+        public bool Delete(Guid id)
         {
             return _eventRepository.Delete(id);
+        }
+
+        public bool IsEventStillValid(Guid id)
+        {
+            var foundEvent = _eventRepository.GetById(id);
+
+            if (foundEvent == null)
+            {
+                return false;
+            }
+
+            return foundEvent.EndAt > _timeProvider.GetUtcNow().UtcDateTime;
         }
     }
 }

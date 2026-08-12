@@ -2,9 +2,9 @@
 {
     public class Event
     {
-        public int Id { get; set; }
+        public Guid Id { get; init; }
 
-        public string Title { get; set; } = string.Empty;
+        public string Title { get; set; }
 
         public string? Description { get; set; }
 
@@ -12,10 +12,8 @@
 
         public DateTime EndAt { get; set; }
 
-        public Event() { }
-
         public Event(
-            int id,
+            Guid id,
             string title,
             string? description,
             DateTime startAt,

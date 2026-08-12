@@ -1,4 +1,5 @@
-﻿using EventsRestApi.Dto;
+﻿using EventsRestApi.Dto.Request;
+using EventsRestApi.Dto.Response;
 using EventsRestApi.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,15 +11,20 @@ namespace EventsRestApi.Controllers
     {
         private readonly IEventService _eventService;
 
-        public EventsController(IEventService eventService)
+        private readonly IBookingService _bookingService;
+
+        public EventsController(
+            IEventService eventService,
+            IBookingService bookingService)
         {
             _eventService = eventService;
+            _bookingService = bookingService;
         }
 
         [HttpGet]
-        public ActionResult<PaginatedResult<EventDto>> GetAll(
-            [FromQuery] string? title, 
-            [FromQuery] DateTime? from, 
+        public ActionResult<PaginatedResult<EventResponseDto>> GetAll(
+            [FromQuery] string? title,
+            [FromQuery] DateTime? from,
             [FromQuery] DateTime? to,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
@@ -26,8 +32,8 @@ namespace EventsRestApi.Controllers
             return _eventService.Get(title, from, to, page, pageSize);
         }
 
-        [HttpGet("{id:int}")]
-        public ActionResult<EventDto> GetById(int id)
+        [HttpGet("{id:guid}")]
+        public ActionResult<EventResponseDto> GetById(Guid id)
         {
             var foundEventDto = _eventService.GetById(id);
 
@@ -40,21 +46,16 @@ namespace EventsRestApi.Controllers
         }
 
         [HttpPost]
-        public IActionResult Add(EventDto addingEventDto)
+        public IActionResult Add(EventRequestDto addingEventDto)
         {
             var addedEventDto = _eventService.Add(addingEventDto);
 
             return CreatedAtAction(nameof(GetById), new { id = addedEventDto.Id }, addedEventDto);
         }
 
-        [HttpPut("{id:int}")]
-        public IActionResult Update(int id, EventDto updatingEventDto)
+        [HttpPut("{id:guid}")]
+        public IActionResult Update(Guid id, EventRequestDto updatingEventDto)
         {
-            if (id != updatingEventDto.Id)
-            {
-                return BadRequest("Id в теле запроса должно совпадать с Id в URL.");
-            }
-
             var isUpdated = _eventService.Update(id, updatingEventDto);
 
             if (!isUpdated)
@@ -65,8 +66,8 @@ namespace EventsRestApi.Controllers
             return NoContent();
         }
 
-        [HttpDelete("{id:int}")]
-        public IActionResult Delete(int id)
+        [HttpDelete("{id:guid}")]
+        public IActionResult Delete(Guid id)
         {
             var isDeleted = _eventService.Delete(id);
 
@@ -76,6 +77,23 @@ namespace EventsRestApi.Controllers
             }
 
             return NoContent();
+        }
+
+        [HttpPost("{eventId:guid}/book")]
+        public async Task<ActionResult<BookingResponseDto>> CreateBooking(Guid eventId, CancellationToken cancellationToken)
+        {
+            var createdBooking = await _bookingService.CreateBookingAsync(eventId, cancellationToken);
+
+            if (createdBooking == null)
+            {
+                return NotFound($"Невозможно создать бронь, т.к. событие с Id: {eventId} не найдено либо уже завершилось.");
+            }
+
+            return AcceptedAtAction(
+                actionName: "GetById",
+                controllerName: "Bookings",
+                routeValues: new { id = createdBooking.Id },
+                value: createdBooking);
         }
     }
 }

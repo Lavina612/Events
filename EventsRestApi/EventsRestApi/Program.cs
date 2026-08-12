@@ -2,13 +2,23 @@ using EventsRestApi.Interfaces;
 using EventsRestApi.Middlewares;
 using EventsRestApi.Repositories;
 using EventsRestApi.Services;
+using EventsRestApi.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+builder.Services.Configure<BookingBackgroundServiceSettings>(
+    builder.Configuration.GetSection(BookingBackgroundServiceSettings.SectionName));
+
+builder.Services.AddHostedService<BookingBackgroundService>();
+
 builder.Services.AddScoped<IEventService, EventService>();
-builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+
+builder.Services.AddSingleton<IEventRepository, EventRepository>();
+builder.Services.AddSingleton<IBookingRepository, BookingRepository>();
+builder.Services.AddSingleton(TimeProvider.System);
 
 builder.Services.AddSwaggerGen();
 

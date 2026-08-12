@@ -5,30 +5,28 @@ namespace EventsRestApi.Repositories
 {
     public class EventRepository : IEventRepository
     {
-        private static readonly List<Event> _events = [];
+        private readonly List<Event> _events = [];
 
-        public List<Event> Get()
+        public IReadOnlyList<Event> Get()
         {
-            return _events;
+            return _events.AsReadOnly();
         }
 
-        public Event? GetById(int id)
+        public Event? GetById(Guid id)
         {
             return _events.FirstOrDefault(x => x.Id == id);
         }
 
         public Event Add(Event addingEvent)
         {
-            addingEvent.Id = _events.Any() ? _events.Max(x => x.Id) + 1 : 1;
-
             _events.Add(addingEvent);
 
             return addingEvent;
         }
 
-        public bool Update(int id, Event newEvent)
+        public bool Update(Event newEvent)
         {
-            var updatingEvent = GetById(id);
+            var updatingEvent = GetById(newEvent.Id);
 
             if (updatingEvent == null)
             {
@@ -43,7 +41,7 @@ namespace EventsRestApi.Repositories
             return true;
         }
 
-        public bool Delete(int id)
+        public bool Delete(Guid id)
         {
             var deletingEvent = GetById(id);
 

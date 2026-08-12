@@ -4,10 +4,10 @@ namespace EventsRestApi.Interfaces
 {
     public interface IEventRepository
     {
-        List<Event> Get();
-        Event? GetById(int id);
+        IReadOnlyList<Event> Get();
+        Event? GetById(Guid id);
         Event Add(Event addingEvent);
-        bool Update(int id, Event newEvent);
-        bool Delete(int id);
+        bool Update(Event newEvent);
+        bool Delete(Guid id);
     }
 }

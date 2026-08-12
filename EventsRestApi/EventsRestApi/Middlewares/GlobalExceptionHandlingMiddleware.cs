@@ -1,6 +1,5 @@
 ﻿using EventsRestApi.Exceptions;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 
 namespace EventsRestApi.Middlewares
 {
@@ -54,6 +53,11 @@ namespace EventsRestApi.Middlewares
                 Detail = ex.Message
             };
 
+            if (ex is AppValidationException ave)
+            {
+                error.Extensions["errors"] = ave.Errors;
+            }
+
             await httpContext.Response.WriteAsJsonAsync(error);
         }
 
@@ -62,7 +66,6 @@ namespace EventsRestApi.Middlewares
             return ex switch
             {
                 AppValidationException ve => StatusCodes.Status400BadRequest,
-                NotFoundException ne => StatusCodes.Status404NotFound,
                 _ => StatusCodes.Status500InternalServerError
             };
         }
