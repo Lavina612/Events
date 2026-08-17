@@ -270,7 +270,7 @@ namespace EventsRestApi.Tests
         }
 
         [Fact]
-        public void Add_CorrectEventDto_EventIdWasChanged()
+        public void Add_CorrectEventDto_EventIdWasGenerated()
         {
             /*---ARRANGE---*/
             //Дата startAt высчитывается относительно fixedTime: 2026.06.06 09:06:00
@@ -281,14 +281,17 @@ namespace EventsRestApi.Tests
                 $"Event 6",
                 $"Description 6",
                 startAt,
-                endAt);
+                endAt,
+                6);
 
             var expectedEventDto = new EventResponseDto(
                 new Guid($"E0000000-0000-0000-0000-000000000006"),
                 addingEventDto.Title,
                 addingEventDto.Description,
                 addingEventDto.StartAt,
-                addingEventDto.EndAt);
+                addingEventDto.EndAt,
+                addingEventDto.TotalSeats,
+                addingEventDto.TotalSeats);
 
             var expectedAddedEvent = Mapper.MapToEvent(expectedEventDto.Id, addingEventDto);
 
@@ -313,7 +316,8 @@ namespace EventsRestApi.Tests
                 updatingEvent.Title + "New",
                 updatingEvent.Description + "New",
                 updatingEvent.StartAt.AddDays(1),
-                updatingEvent.EndAt.AddDays(1));
+                updatingEvent.EndAt.AddDays(1),
+                updatingEvent.TotalSeats);
 
             _mockEventRepository
                 .Setup(mock => mock.Update(It.IsAny<Event>()))
@@ -340,7 +344,8 @@ namespace EventsRestApi.Tests
                 $"Event New",
                 $"Description 1",
                 startAt,
-                endAt);
+                endAt,
+                1);
 
             _mockEventRepository
                 .Setup(mock => mock.Update(It.IsAny<Event>()))
@@ -430,7 +435,8 @@ namespace EventsRestApi.Tests
                 allEvents[0].Title,
                 allEvents[0].Description,
                 allEvents[0].StartAt,
-                fixedTime.AddDays(-1).UtcDateTime);
+                fixedTime.AddDays(-1).UtcDateTime,
+                allEvents[0].TotalSeats);
 
             _mockEventRepository
                 .Setup(mock => mock.GetById(endedEvent.Id))
@@ -461,7 +467,8 @@ namespace EventsRestApi.Tests
                     $"{title} {i}",
                     $"{description} {i}",
                     startAt,
-                    startAt.AddDays(eventCount));
+                    startAt.AddDays(eventCount),
+                    i);
 
                 allEvents.Add(currentEvent);
 

@@ -6,7 +6,8 @@ namespace EventsRestApi.Dto.Request
         [Required(ErrorMessage = "Название мероприятия обязательно для заполнения.")] string Title,
         string? Description,
         [Required(ErrorMessage = "Дата начала мероприятия обязательна для заполнения.")] DateTime StartAt,
-        [Required(ErrorMessage = "Дата окончания мероприятия обязательна для заполнения.")] DateTime EndAt)
+        [Required(ErrorMessage = "Дата окончания мероприятия обязательна для заполнения.")] DateTime EndAt,
+        [Required(ErrorMessage = "Количество мест на мерояприятии обязательно для заполнения.")] int TotalSeats)
         : IValidatableObject
     {
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
@@ -16,6 +17,14 @@ namespace EventsRestApi.Dto.Request
                 yield return new ValidationResult(
                     "Дата окончания мероприятия должна быть позже даты начала мероприятия.",
                     [nameof(EndAt)]
+                );
+            }
+
+            if (TotalSeats <= 0)
+            {
+                yield return new ValidationResult(
+                    "Количество мест на мерояприятии должно быть положительным.",
+                    [nameof(TotalSeats)]
                 );
             }
         }
