@@ -8,6 +8,7 @@ using Moq;
 
 namespace EventsRestApi.Tests
 {
+    //TODO: Fix all tests
     public class BookingServiceTests
     {
         private readonly DateTimeOffset fixedTime = new DateTimeOffset(2026, 06, 01, 09, 01, 01, TimeSpan.Zero);

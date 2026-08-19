@@ -58,6 +58,24 @@ namespace EventsRestApi.Middlewares
                 error.Extensions["errors"] = ave.Errors;
             }
 
+            if (ex is NotFoundEventException nfee)
+            {
+                error.Extensions["eventId"] = nfee.EventId;
+            }
+
+            if (ex is NoAvailableSeatsException nase)
+            {
+                error.Extensions["eventId"] = nase.EventId;
+                error.Extensions["requestedSeats"] = nase.RequestedSeats;
+                error.Extensions["availableSeats"] = nase.AvailableSeats;
+            }
+
+            if (ex is FinishedEventException fee)
+            {
+                error.Extensions["eventId"] = fee.EventId;
+                error.Extensions["endAt"] = fee.EndAt;
+            }
+
             await httpContext.Response.WriteAsJsonAsync(error);
         }
 
@@ -65,7 +83,10 @@ namespace EventsRestApi.Middlewares
         {
             return ex switch
             {
-                AppValidationException ve => StatusCodes.Status400BadRequest,
+                AppValidationException => StatusCodes.Status400BadRequest,
+                NotFoundEventException => StatusCodes.Status404NotFound,
+                NoAvailableSeatsException => StatusCodes.Status409Conflict,
+                FinishedEventException => StatusCodes.Status422UnprocessableEntity,
                 _ => StatusCodes.Status500InternalServerError
             };
         }

@@ -16,13 +16,17 @@ namespace EventsRestApi.Controllers
         }
 
         [HttpGet("{id:guid}")]
+        [ProducesResponseType(typeof(BookingResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<BookingResponseDto>> GetById(Guid id, CancellationToken cancellationToken)
         {
             var foundBookingDto = await _bookingService.GetBookingByIdAsync(id, cancellationToken);
 
             if (foundBookingDto == null)
             {
-                return NotFound($"Бронь с Id: {id} не найдена.");
+                return Problem(
+                    detail: $"Бронь с Id: {id} не найдена.",
+                    statusCode: StatusCodes.Status404NotFound);
             }
 
             return foundBookingDto;

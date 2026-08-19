@@ -23,6 +23,7 @@ namespace EventsRestApi.Controllers
         }
 
         [HttpGet]
+        [ProducesResponseType(typeof(PaginatedResult<EventResponseDto>), StatusCodes.Status200OK)]
         public ActionResult<PaginatedResult<EventResponseDto>> GetAll(
             [FromQuery] string? title,
             [FromQuery] DateTime? from,
@@ -34,19 +35,24 @@ namespace EventsRestApi.Controllers
         }
 
         [HttpGet("{id:guid}")]
+        [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public ActionResult<EventResponseDto> GetById(Guid id)
         {
-            var foundEventDto = _eventService.GetById(id);
+            var foundEventDto = _eventService.GetDtoById(id);
 
             if (foundEventDto == null)
             {
-                return NotFound($"Событие с Id: {id} не найдено.");
+                return Problem(
+                    detail: $"Событие с Id: {id} не найдено.",
+                    statusCode: StatusCodes.Status404NotFound);
             }
 
             return foundEventDto;
         }
 
         [HttpPost]
+        [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status201Created)]
         public IActionResult Add(EventRequestDto addingEventDto)
         {
             var addedEventDto = _eventService.Add(addingEventDto);
@@ -55,40 +61,50 @@ namespace EventsRestApi.Controllers
         }
 
         [HttpPut("{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public IActionResult Update(Guid id, EventRequestDto updatingEventDto)
         {
             var isUpdated = _eventService.Update(id, updatingEventDto);
 
             if (!isUpdated)
             {
-                return NotFound($"Событие с Id: {id} не найдено.");
+                return Problem(
+                    detail: $"Событие с Id: {id} не найдено.",
+                    statusCode: StatusCodes.Status404NotFound);
             }
 
             return NoContent();
         }
 
         [HttpDelete("{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public IActionResult Delete(Guid id)
         {
             var isDeleted = _eventService.Delete(id);
 
             if (!isDeleted)
             {
-                return NotFound($"Событие с Id: {id} не найдено.");
+                return Problem(
+                    detail: $"Событие с Id: {id} не найдено.",
+                    statusCode: StatusCodes.Status404NotFound);
             }
 
             return NoContent();
         }
 
         [HttpPost("{eventId:guid}/book")]
-        public async Task<ActionResult<BookingResponseDto>> CreateBooking(Guid eventId, CancellationToken cancellationToken)
+        [ProducesResponseType(StatusCodes.Status202Accepted)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<ActionResult<BookingResponseDto>> CreateBooking(
+            Guid eventId, 
+            [FromQuery][Range(1, int.MaxValue, ErrorMessage = "Количество запрашиваемых мест должно быть положительным.")] int requestedSeats, 
+            CancellationToken cancellationToken)
         {
-            var createdBooking = await _bookingService.CreateBookingAsync(eventId, cancellationToken);
-
-            if (createdBooking == null)
-            {
-                return NotFound($"Невозможно создать бронь, т.к. событие с Id: {eventId} не найдено либо уже завершилось.");
-            }
+            var createdBooking = await _bookingService.CreateBookingAsync(eventId, requestedSeats, cancellationToken);
 
             return AcceptedAtAction(
                 actionName: "GetById",

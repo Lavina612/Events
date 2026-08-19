@@ -1,5 +1,4 @@
 ﻿using EventsRestApi.Dto.Response;
-using EventsRestApi.Models;
 
 namespace EventsRestApi.Interfaces
 {
@@ -7,7 +6,7 @@ namespace EventsRestApi.Interfaces
     {
         Task<BookingResponseDto?> GetBookingByIdAsync(Guid bookingId, CancellationToken cancellationToken);
 
-        Task<BookingResponseDto?> CreateBookingAsync(Guid eventId, CancellationToken cancellationToken);
+        Task<BookingResponseDto> CreateBookingAsync(Guid eventId, int requestedSeats, CancellationToken cancellationToken);
 
         Task<int> ProcessPendingBookingsBunchAsync(int count, CancellationToken cancellationToken);
     }

@@ -33,6 +33,11 @@
             AvailableSeats = totalSeats;
         }
 
+        public bool IsStillActual(DateTime currentUtcNow)
+        {
+            return EndAt > currentUtcNow;
+        }
+
         public bool TryReserveSeats(int count = 1)
         {
             if (AvailableSeats < count)

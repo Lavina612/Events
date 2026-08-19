@@ -1,4 +1,5 @@
 ﻿using EventsRestApi.Dto.Response;
+using EventsRestApi.Exceptions;
 using EventsRestApi.Interfaces;
 using EventsRestApi.Mappers;
 using EventsRestApi.Models;
@@ -7,6 +8,8 @@ namespace EventsRestApi.Services
 {
     public class BookingService : IBookingService
     {
+        private static readonly Lock _bookingLock = new();
+
         private readonly IBookingRepository _bookingRepository;
 
         private readonly IEventService _eventService;
@@ -36,14 +39,32 @@ namespace EventsRestApi.Services
                 : Mapper.MapToBookingResponseDto(foundBooking);
         }
 
-        public async Task<BookingResponseDto?> CreateBookingAsync(Guid eventId, CancellationToken cancellationToken)
+        public async Task<BookingResponseDto> CreateBookingAsync(Guid eventId, int requestedSeats, CancellationToken cancellationToken)
         {
-            if (!_eventService.IsEventStillValid(eventId))
-            {
-                return null;
-            }
+            Booking? addedBooking = null;
 
-            var addedBooking = _bookingRepository.Add(eventId);
+            lock (_bookingLock)
+            {
+                var foundEvent = _eventService.GetById(eventId);
+
+                if (foundEvent == null)
+                {
+                    throw new NotFoundEventException(eventId);
+                }
+
+                if (!foundEvent.IsStillActual(_timeProvider.GetUtcNow().UtcDateTime))
+                {
+                    throw new FinishedEventException(eventId, foundEvent.EndAt);
+                }
+
+                if (!foundEvent.TryReserveSeats(requestedSeats))
+                {
+                    throw new NoAvailableSeatsException(eventId, requestedSeats, foundEvent.AvailableSeats);
+                }
+
+                addedBooking = _bookingRepository.Add(eventId);
+                _eventService.Update(foundEvent);
+            }
 
             return Mapper.MapToBookingResponseDto(addedBooking);
         }
@@ -60,10 +81,21 @@ namespace EventsRestApi.Services
 
                 await Task.Delay(TimeSpan.FromSeconds(2), _timeProvider, cancellationToken);
 
-                booking.Status = _eventService.IsEventStillValid(booking.EventId)
-                    ? BookingStatus.Confirmed
-                    : BookingStatus.Rejected;
+                var foundEvent = _eventService.GetById(booking.EventId);
 
+                if (foundEvent == null)
+                {
+                    booking.Status = BookingStatus.Rejected;
+                    throw new NotFoundEventException(booking.EventId);
+                }
+
+                if (!foundEvent.IsStillActual(_timeProvider.GetUtcNow().UtcDateTime))
+                {
+                    booking.Status = BookingStatus.Rejected;
+                    throw new FinishedEventException(foundEvent.Id, foundEvent.EndAt);
+                }
+
+                booking.Status = BookingStatus.Confirmed;
                 booking.ProcessedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
                 _bookingRepository.Update(booking);

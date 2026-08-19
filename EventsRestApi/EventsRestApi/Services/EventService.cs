@@ -2,6 +2,7 @@
 using EventsRestApi.Dto.Response;
 using EventsRestApi.Interfaces;
 using EventsRestApi.Mappers;
+using EventsRestApi.Models;
 
 namespace EventsRestApi.Services
 {
@@ -56,9 +57,9 @@ namespace EventsRestApi.Services
                 totalPages);
         }
 
-        public EventResponseDto? GetById(Guid id)
+        public EventResponseDto? GetDtoById(Guid id)
         {
-            var foundEvent = _eventRepository.GetById(id);
+            var foundEvent = GetById(id);
 
             return foundEvent == null
                 ? null
@@ -78,7 +79,7 @@ namespace EventsRestApi.Services
         {
             var newEvent = Mapper.MapToEvent(id, newEventDto);
 
-            return _eventRepository.Update(newEvent);
+            return Update(newEvent);
         }
 
         public bool Delete(Guid id)
@@ -86,16 +87,14 @@ namespace EventsRestApi.Services
             return _eventRepository.Delete(id);
         }
 
-        public bool IsEventStillValid(Guid id)
+        public Event? GetById(Guid id)
         {
-            var foundEvent = _eventRepository.GetById(id);
+            return _eventRepository.GetById(id);
+        }
 
-            if (foundEvent == null)
-            {
-                return false;
-            }
-
-            return foundEvent.EndAt > _timeProvider.GetUtcNow().UtcDateTime;
+        public bool Update(Event newEvent)
+        {
+            return _eventRepository.Update(newEvent);
         }
     }
 }

@@ -9,6 +9,7 @@ using Moq;
 
 namespace EventsRestApi.Tests
 {
+    //TODO: Fix all tests
     public class EventServiceTests
     {
         private readonly DateTimeOffset fixedTime = new DateTimeOffset(2026, 06, 05, 09, 05, 05, TimeSpan.Zero);
@@ -246,7 +247,7 @@ namespace EventsRestApi.Tests
                 .Returns(allEvents[2]);
 
             /*---ACT---*/
-            var result = _eventService.GetById(id);
+            var result = _eventService.GetDtoById(id);
 
             /*---ASSERT---*/
             Assert.Equivalent(expected, result, true);
@@ -263,7 +264,7 @@ namespace EventsRestApi.Tests
                 .Returns((Event?)null);
 
             /*---ACT---*/
-            var result = _eventService.GetById(id);
+            var result = _eventService.GetDtoById(id);
 
             /*---ASSERT---*/
             Assert.Null(result);
