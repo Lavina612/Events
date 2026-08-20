@@ -40,7 +40,7 @@ namespace EventsRestApi.Middlewares
                     httpContext.Request.Method,
                     httpContext.Request.Path,
                     httpContext.Request.Headers["x-request-id"]);
-            } 
+            }
             else
             {
                 _logger.LogWarning(

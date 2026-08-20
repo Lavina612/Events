@@ -23,7 +23,7 @@ namespace EventsRestApi.Dto.Request
             if (TotalSeats <= 0)
             {
                 yield return new ValidationResult(
-                    "Количество мест на мерояприятии должно быть положительным.",
+                    "Количество мест на мероприятии должно быть положительным.",
                     [nameof(TotalSeats)]
                 );
             }

@@ -8,17 +8,17 @@ namespace EventsRestApi.Services
     {
         private readonly ILogger<BookingBackgroundService> _logger;
 
-        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IBookingService _bookingService;
 
         private readonly BookingBackgroundServiceSettings _settings;
 
         public BookingBackgroundService(
             ILogger<BookingBackgroundService> logger,
-            IServiceScopeFactory scopeFactory,
+            IBookingService bookingService,
             IOptions<BookingBackgroundServiceSettings> settings)
         {
             _logger = logger;
-            _scopeFactory = scopeFactory;
+            _bookingService = bookingService;
             _settings = settings.Value;
         }
 
@@ -32,10 +32,7 @@ namespace EventsRestApi.Services
             {
                 try
                 {
-                    using var scope = _scopeFactory.CreateScope();
-                    var bookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
-
-                    var processedBookingsCount = await bookingService.ProcessPendingBookingsBunchAsync(_settings.BunchCount, cancellationToken);
+                    var processedBookingsCount = await _bookingService.ProcessPendingBookingsBunchAsync(_settings.BunchCount, cancellationToken);
 
                     if (processedBookingsCount < _settings.BunchCount)
                     {

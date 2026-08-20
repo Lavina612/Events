@@ -15,9 +15,8 @@ builder.Services.Configure<BookingBackgroundServiceSettings>(
 
 builder.Services.AddHostedService<BookingBackgroundService>();
 
-builder.Services.AddScoped<IEventService, EventService>();
-builder.Services.AddScoped<IBookingService, BookingService>();
-
+builder.Services.AddSingleton<IEventService, EventService>();
+builder.Services.AddSingleton<IBookingService, BookingService>();
 builder.Services.AddSingleton<IEventRepository, EventRepository>();
 builder.Services.AddSingleton<IBookingRepository, BookingRepository>();
 builder.Services.AddSingleton(TimeProvider.System);

@@ -57,8 +57,7 @@ namespace EventsRestApi.Repositories
                 return false;
             }
 
-            updatingBooking.Status = newBooking.Status;
-            updatingBooking.ProcessedAt = newBooking.ProcessedAt;
+            updatingBooking.ChangeStatus(newBooking.Status, newBooking.ProcessedAt);
 
             return true;
         }

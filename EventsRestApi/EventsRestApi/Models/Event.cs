@@ -2,19 +2,36 @@
 {
     public class Event
     {
+        private DateTime _startAt;
+        private DateTime _endAt;
+
         public Guid Id { get; init; }
 
         public string Title { get; set; }
 
         public string? Description { get; set; }
 
-        public DateTime StartAt { get; set; }
+        public DateTime StartAt { 
+            get => _startAt;
+            set
+            {
+                ValidateDates(value, _endAt, nameof(StartAt));
+                _startAt = value;
+            }
+        }
 
-        public DateTime EndAt { get; set; }
+        public DateTime EndAt { 
+            get => _endAt;
+            set
+            {
+                ValidateDates(_startAt, value, nameof(EndAt));
+                _endAt = value;
+            }
+        }
 
         public int TotalSeats { get; init; }
 
-        public int AvailableSeats { get; set; }
+        public int AvailableSeats { get; private set; }
 
         public Event(
             Guid id,
@@ -25,10 +42,20 @@
             int totalSeats)
         {
             Id = id;
+
+            if (totalSeats <= 0)
+            {
+                throw new ArgumentException(
+                    $"Событие с Id: {Id}: Количество мест на мероприятии должно быть положительным.",
+                    nameof(TotalSeats));
+            }
+
+            ValidateDates(startAt, endAt, nameof(endAt));
+
             Title = title;
             Description = description;
-            StartAt = startAt;
-            EndAt = endAt;
+            _startAt = startAt;
+            _endAt = endAt;
             TotalSeats = totalSeats;
             AvailableSeats = totalSeats;
         }
@@ -51,11 +78,23 @@
 
         public void ReleaseSeats(int count = 1)
         {
-            AvailableSeats += count;
-
-            if (AvailableSeats > TotalSeats)
+            if (AvailableSeats + count > TotalSeats)
             {
-                throw new Exception("По непонятной причине кол-во доступных мест на мероприятие стало больше, чем общее кол-во мест.");
+                throw new InvalidOperationException(
+                    $"Невозможно освободить {count} мест, т.к. иначе будет превышено общее число мест. " +
+                    $"Сейчас общее число мест: {TotalSeats}, из них свободных мест: {AvailableSeats}.");
+            }
+
+            AvailableSeats += count;
+        }
+
+        private void ValidateDates(DateTime startAt, DateTime endAt, string paramName)
+        {
+            if (endAt <= startAt)
+            {
+                throw new ArgumentException(
+                    $"Событие с Id: {Id}: Дата окончания мероприятия должна быть позже даты начала мероприятия.",
+                    paramName);
             }
         }
     }

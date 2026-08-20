@@ -108,8 +108,8 @@ namespace EventsRestApi.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<ActionResult<BookingResponseDto>> CreateBooking(
-            Guid eventId, 
-            [FromQuery][Range(1, int.MaxValue, ErrorMessage = "Количество запрашиваемых мест должно быть положительным.")] int requestedSeats, 
+            Guid eventId,
+            [FromQuery][Range(1, int.MaxValue, ErrorMessage = "Количество бронируемых мест должно быть положительным.")] int requestedSeats,
             CancellationToken cancellationToken)
         {
             var createdBooking = await _bookingService.CreateBookingAsync(eventId, requestedSeats, cancellationToken);

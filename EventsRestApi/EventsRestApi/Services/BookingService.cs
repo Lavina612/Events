@@ -6,7 +6,7 @@ namespace EventsRestApi.Services
 {
     public class BookingService : IBookingService
     {
-        private static readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
+        private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
 
         private readonly IBookingRepository _bookingRepository;
 
@@ -30,7 +30,7 @@ namespace EventsRestApi.Services
 
         public async Task<Booking?> GetBookingByIdAsync(Guid bookingId, CancellationToken cancellationToken)
         {
-             return _bookingRepository.GetById(bookingId);
+            return _bookingRepository.GetById(bookingId);
         }
 
         public async Task<Booking> CreateBookingAsync(Guid eventId, int requestedSeats, CancellationToken cancellationToken)
@@ -98,8 +98,7 @@ namespace EventsRestApi.Services
 
                 if (foundEvent == null)
                 {
-                    booking.Status = BookingStatus.Rejected;
-                    booking.ProcessedAt = _timeProvider.GetUtcNow().UtcDateTime;
+                    booking.Reject(_timeProvider.GetUtcNow().UtcDateTime);
 
                     _bookingRepository.Update(booking);
 
@@ -114,8 +113,7 @@ namespace EventsRestApi.Services
 
                 if (!foundEvent.IsStillActual(_timeProvider.GetUtcNow().UtcDateTime))
                 {
-                    booking.Status = BookingStatus.Rejected;
-                    booking.ProcessedAt = _timeProvider.GetUtcNow().UtcDateTime;
+                    booking.Reject(_timeProvider.GetUtcNow().UtcDateTime);
 
                     foundEvent.ReleaseSeats(booking.BookedSeats);
 
@@ -133,8 +131,7 @@ namespace EventsRestApi.Services
                     throw new FinishedEventException(foundEvent.Id, foundEvent.EndAt);
                 }
 
-                booking.Status = BookingStatus.Confirmed;
-                booking.ProcessedAt = _timeProvider.GetUtcNow().UtcDateTime;
+                booking.Confirm(_timeProvider.GetUtcNow().UtcDateTime);
 
                 _bookingRepository.Update(booking);
 
@@ -153,8 +150,7 @@ namespace EventsRestApi.Services
                     _eventService.Update(foundEvent);
                 }
 
-                booking.Status = BookingStatus.Rejected;
-                booking.ProcessedAt = _timeProvider.GetUtcNow().UtcDateTime;
+                booking.Reject(_timeProvider.GetUtcNow().UtcDateTime);
 
                 _bookingRepository.Update(booking);
 
