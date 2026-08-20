@@ -1,5 +1,6 @@
 ﻿using EventsRestApi.Dto.Response;
 using EventsRestApi.Interfaces;
+using EventsRestApi.Mappers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EventsRestApi.Controllers
@@ -20,16 +21,16 @@ namespace EventsRestApi.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<BookingResponseDto>> GetById(Guid id, CancellationToken cancellationToken)
         {
-            var foundBookingDto = await _bookingService.GetBookingByIdAsync(id, cancellationToken);
+            var foundBooking = await _bookingService.GetBookingByIdAsync(id, cancellationToken);
 
-            if (foundBookingDto == null)
+            if (foundBooking == null)
             {
                 return Problem(
                     detail: $"Бронь с Id: {id} не найдена.",
                     statusCode: StatusCodes.Status404NotFound);
             }
 
-            return foundBookingDto;
+            return Mapper.MapToBookingResponseDto(foundBooking);
         }
     }
 }

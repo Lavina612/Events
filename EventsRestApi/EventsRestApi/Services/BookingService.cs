@@ -1,7 +1,5 @@
-﻿using EventsRestApi.Dto.Response;
-using EventsRestApi.Exceptions;
+﻿using EventsRestApi.Exceptions;
 using EventsRestApi.Interfaces;
-using EventsRestApi.Mappers;
 using EventsRestApi.Models;
 
 namespace EventsRestApi.Services
@@ -30,16 +28,12 @@ namespace EventsRestApi.Services
             _logger = logger;
         }
 
-        public async Task<BookingResponseDto?> GetBookingByIdAsync(Guid bookingId, CancellationToken cancellationToken)
+        public async Task<Booking?> GetBookingByIdAsync(Guid bookingId, CancellationToken cancellationToken)
         {
-            var foundBooking = _bookingRepository.GetById(bookingId);
-
-            return foundBooking == null
-                ? null
-                : Mapper.MapToBookingResponseDto(foundBooking);
+             return _bookingRepository.GetById(bookingId);
         }
 
-        public async Task<BookingResponseDto> CreateBookingAsync(Guid eventId, int requestedSeats, CancellationToken cancellationToken)
+        public async Task<Booking> CreateBookingAsync(Guid eventId, int requestedSeats, CancellationToken cancellationToken)
         {
             Booking? addedBooking = null;
 
@@ -71,7 +65,7 @@ namespace EventsRestApi.Services
                 _semaphoreSlim.Release();
             }
 
-            return Mapper.MapToBookingResponseDto(addedBooking);
+            return addedBooking;
         }
 
         public async Task<int> ProcessPendingBookingsBunchAsync(int count, CancellationToken cancellationToken)

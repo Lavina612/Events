@@ -1,6 +1,7 @@
 ﻿using EventsRestApi.Dto.Request;
 using EventsRestApi.Dto.Response;
 using EventsRestApi.Interfaces;
+using EventsRestApi.Mappers;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
@@ -31,7 +32,14 @@ namespace EventsRestApi.Controllers
             [FromQuery][Range(1, int.MaxValue, ErrorMessage = "Номер страницы должен быть положительным.")] int page = 1,
             [FromQuery][Range(1, 100, ErrorMessage = "Размер страницы должен быть от 1 до 100.")] int pageSize = 10)
         {
-            return _eventService.Get(title, from, to, page, pageSize);
+            var resultWithEvents = _eventService.Get(title, from, to, page, pageSize);
+
+            return new PaginatedResult<EventResponseDto>(
+                resultWithEvents.ItemsForPage.Select(Mapper.MapToEventResponseDto).ToList(),
+                resultWithEvents.TotalCount,
+                resultWithEvents.Page,
+                resultWithEvents.PageSize,
+                resultWithEvents.TotalPages);
         }
 
         [HttpGet("{id:guid}")]
@@ -39,25 +47,25 @@ namespace EventsRestApi.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public ActionResult<EventResponseDto> GetById(Guid id)
         {
-            var foundEventDto = _eventService.GetDtoById(id);
+            var foundEvent = _eventService.GetById(id);
 
-            if (foundEventDto == null)
+            if (foundEvent == null)
             {
                 return Problem(
                     detail: $"Событие с Id: {id} не найдено.",
                     statusCode: StatusCodes.Status404NotFound);
             }
 
-            return foundEventDto;
+            return Mapper.MapToEventResponseDto(foundEvent);
         }
 
         [HttpPost]
         [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status201Created)]
         public IActionResult Add(EventRequestDto addingEventDto)
         {
-            var addedEventDto = _eventService.Add(addingEventDto);
+            var addedEvent = _eventService.Add(Mapper.MapToEvent(addingEventDto));
 
-            return CreatedAtAction(nameof(GetById), new { id = addedEventDto.Id }, addedEventDto);
+            return CreatedAtAction(nameof(GetById), new { id = addedEvent.Id }, Mapper.MapToEventResponseDto(addedEvent));
         }
 
         [HttpPut("{id:guid}")]
@@ -65,7 +73,7 @@ namespace EventsRestApi.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public IActionResult Update(Guid id, EventRequestDto updatingEventDto)
         {
-            var isUpdated = _eventService.Update(id, updatingEventDto);
+            var isUpdated = _eventService.Update(Mapper.MapToEvent(id, updatingEventDto));
 
             if (!isUpdated)
             {
@@ -110,7 +118,7 @@ namespace EventsRestApi.Controllers
                 actionName: "GetById",
                 controllerName: "Bookings",
                 routeValues: new { id = createdBooking.Id },
-                value: createdBooking);
+                value: Mapper.MapToBookingResponseDto(createdBooking));
         }
     }
 }

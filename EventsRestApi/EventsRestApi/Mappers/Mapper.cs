@@ -17,6 +17,11 @@ namespace EventsRestApi.Mappers
                 eventDto.TotalSeats);
         }
 
+        public static Event MapToEvent(EventRequestDto eventDto)
+        {
+            return MapToEvent(Guid.NewGuid(), eventDto);
+        }
+
         public static EventResponseDto MapToEventResponseDto(Event ev)
         {
             return new EventResponseDto(
