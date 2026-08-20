@@ -8,7 +8,7 @@ namespace EventsRestApi.Services
 {
     public class BookingService : IBookingService
     {
-        private static readonly Lock _bookingLock = new();
+        private static readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
 
         private readonly IBookingRepository _bookingRepository;
 
@@ -43,7 +43,8 @@ namespace EventsRestApi.Services
         {
             Booking? addedBooking = null;
 
-            lock (_bookingLock)
+            await _semaphoreSlim.WaitAsync();
+            try
             {
                 var foundEvent = _eventService.GetById(eventId);
 
@@ -62,8 +63,12 @@ namespace EventsRestApi.Services
                     throw new NoAvailableSeatsException(eventId, requestedSeats, foundEvent.AvailableSeats);
                 }
 
-                addedBooking = _bookingRepository.Add(eventId);
+                addedBooking = _bookingRepository.Add(eventId, requestedSeats);
                 _eventService.Update(foundEvent);
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
             }
 
             return Mapper.MapToBookingResponseDto(addedBooking);
@@ -75,23 +80,62 @@ namespace EventsRestApi.Services
 
             var pendingBookings = _bookingRepository.GetByStatus(BookingStatus.Pending, count);
 
-            foreach (var booking in pendingBookings)
+            var tasks = pendingBookings.Select(booking =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                return ProcessBookingAsync(booking, cancellationToken);
+            });
 
-                await Task.Delay(TimeSpan.FromSeconds(2), _timeProvider, cancellationToken);
+            await Task.WhenAll(tasks);
 
-                var foundEvent = _eventService.GetById(booking.EventId);
+            return pendingBookings.Count;
+        }
+
+        private async Task ProcessBookingAsync(Booking booking, CancellationToken cancellationToken)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(2), _timeProvider, cancellationToken);
+
+            Event? foundEvent = null;
+
+            await _semaphoreSlim.WaitAsync();
+            try
+            {
+                foundEvent = _eventService.GetById(booking.EventId);
 
                 if (foundEvent == null)
                 {
                     booking.Status = BookingStatus.Rejected;
+                    booking.ProcessedAt = _timeProvider.GetUtcNow().UtcDateTime;
+
+                    _bookingRepository.Update(booking);
+
+                    _logger.LogWarning(
+                        "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: события с Id: {EventId} не существует.",
+                        booking.ProcessedAt,
+                        booking.Id,
+                        booking.EventId);
+
                     throw new NotFoundEventException(booking.EventId);
                 }
 
                 if (!foundEvent.IsStillActual(_timeProvider.GetUtcNow().UtcDateTime))
                 {
                     booking.Status = BookingStatus.Rejected;
+                    booking.ProcessedAt = _timeProvider.GetUtcNow().UtcDateTime;
+
+                    foundEvent.ReleaseSeats(booking.BookedSeats);
+
+                    _eventService.Update(foundEvent);
+                    _bookingRepository.Update(booking);
+
+                    _logger.LogWarning(
+                        "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: события с Id: {EventId} уже завершилось. " +
+                        "Количество доступных мест обратно увеличено на {BookingSeats}",
+                        booking.ProcessedAt,
+                        booking.Id,
+                        booking.EventId,
+                        booking.BookedSeats);
+
                     throw new FinishedEventException(foundEvent.Id, foundEvent.EndAt);
                 }
 
@@ -106,8 +150,29 @@ namespace EventsRestApi.Services
                     booking.Id,
                     booking.Status);
             }
+            catch
+            {
+                if (foundEvent != null)
+                {
+                    foundEvent.ReleaseSeats(booking.BookedSeats);
 
-            return pendingBookings.Count;
+                    _eventService.Update(foundEvent);
+                }
+
+                booking.Status = BookingStatus.Rejected;
+                booking.ProcessedAt = _timeProvider.GetUtcNow().UtcDateTime;
+
+                _bookingRepository.Update(booking);
+
+                _logger.LogWarning(
+                    "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: неизвестная ошибка.",
+                    booking.ProcessedAt,
+                    booking.Id);
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
+            }
         }
     }
 }

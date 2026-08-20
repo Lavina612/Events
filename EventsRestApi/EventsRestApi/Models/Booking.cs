@@ -8,6 +8,8 @@
 
         public BookingStatus Status { get; set; }
 
+        public int BookedSeats { get; init; }
+
         public DateTime CreatedAt { get; init; }
 
         public DateTime? ProcessedAt { get; set; }
@@ -16,6 +18,7 @@
             Guid id,
             Guid eventId,
             BookingStatus status,
+            int bookedSeats,
             DateTime createdAt,
             DateTime? processedAt = null)
         {
@@ -24,6 +27,7 @@
             Status = status;
             CreatedAt = createdAt;
             ProcessedAt = processedAt;
+            BookedSeats = bookedSeats;
         }
     }
 }
