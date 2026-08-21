@@ -32,7 +32,7 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var page = 1;
             var pageSize = int.MaxValue;
-            List<Event> expectedEvents = allEvents;
+            List<Event> expectedEvents = allEvents.OrderBy(x => x.StartAt).ToList();
             var totalPages = (expectedEvents.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<Event>(
@@ -93,7 +93,7 @@ namespace EventsRestApi.Tests
             var startAt = fixedTime.AddDays(-2).AddMinutes(-2).AddSeconds(-5).UtcDateTime;
             var endAt = startAt.AddDays(6).AddMinutes(4).AddSeconds(4);
 
-            List<Event> expectedEvents = allEvents[2..4];
+            List<Event> expectedEvents = allEvents[2..4].OrderBy(x => x.StartAt).ToList();
             var totalPages = (expectedEvents.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<Event>(
@@ -153,7 +153,7 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var page = 2;
             var pageSize = 2;
-            List<Event> expectedEvents = allEvents[2..4];
+            List<Event> expectedEvents = allEvents.OrderBy(x => x.StartAt).Skip(2).Take(2).ToList();
             var totalPages = (allEvents.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<Event>(

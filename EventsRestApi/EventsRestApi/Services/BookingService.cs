@@ -37,7 +37,7 @@ namespace EventsRestApi.Services
         {
             Booking? addedBooking = null;
 
-            await _semaphoreSlim.WaitAsync();
+            await _semaphoreSlim.WaitAsync(cancellationToken);
             try
             {
                 var foundEvent = _eventService.GetById(eventId);
@@ -104,7 +104,7 @@ namespace EventsRestApi.Services
                         booking.Id,
                         booking.EventId);
 
-                    throw new NotFoundEventException(booking.EventId);
+                    return;
                 }
 
                 if (!foundEvent.IsStillActual(_timeProvider.GetUtcNow().UtcDateTime))
@@ -124,7 +124,7 @@ namespace EventsRestApi.Services
                         booking.EventId,
                         booking.BookedSeats);
 
-                    throw new FinishedEventException(foundEvent.Id, foundEvent.EndAt);
+                    return;
                 }
 
                 booking.Confirm(_timeProvider.GetUtcNow().UtcDateTime);
@@ -137,8 +137,14 @@ namespace EventsRestApi.Services
                     booking.Id,
                     booking.Status);
             }
-            catch (Exception ex) when (ex is not NotFoundEventException && ex is not FinishedEventException)
+            catch (Exception ex)
             {
+                _logger.LogError(
+                    ex,
+                    "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: неизвестная ошибка.",
+                    booking.ProcessedAt,
+                    booking.Id);
+
                 if (foundEvent != null)
                 {
                     foundEvent.ReleaseSeats(booking.BookedSeats);
@@ -150,10 +156,7 @@ namespace EventsRestApi.Services
 
                 _bookingRepository.Update(booking);
 
-                _logger.LogWarning(
-                    "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: неизвестная ошибка.",
-                    booking.ProcessedAt,
-                    booking.Id);
+
             }
             finally
             {

@@ -114,6 +114,9 @@ namespace EventsRestApi.Tests
             /*---ASSERT---*/
             Assert.Equivalent(expectedCreatedBooking, result, true);
             Assert.Equal(availableSeatsAfterBooking, foundEvent.AvailableSeats);
+
+            _mockEventService.Verify(mock => mock.Update(foundEvent),
+                Times.Once);
         }
 
         [Fact]
@@ -211,6 +214,9 @@ namespace EventsRestApi.Tests
             /*---ASSERT---*/
             Assert.Equivalent(expectedCreatedBooking, result, true);
             Assert.Equal(availableSeatsAfterBooking, foundEvent.AvailableSeats);
+
+            _mockEventService.Verify(mock => mock.Update(foundEvent), 
+                Times.Once);
         }
 
         [Fact]
@@ -277,7 +283,7 @@ namespace EventsRestApi.Tests
                 .Returns((Event?)null);
 
             /*---ACT & ASSERT---*/
-            var exception = await Assert.ThrowsAnyAsync<NotFoundEventException>(() =>
+            await Assert.ThrowsAnyAsync<NotFoundEventException>(() =>
                 _bookingService.CreateBookingAsync(eventId, It.IsAny<int>(), CancellationToken.None));
 
             _mockBookingRepository.Verify(mock => mock.Add(eventId, It.IsAny<int>()),
@@ -310,7 +316,7 @@ namespace EventsRestApi.Tests
                 .Returns(foundEvent);
 
             /*---ACT & ASSERT---*/
-            var exception = await Assert.ThrowsAnyAsync<FinishedEventException>(() =>
+            await Assert.ThrowsAnyAsync<FinishedEventException>(() =>
                 _bookingService.CreateBookingAsync(eventId, 1, CancellationToken.None));
 
             _mockBookingRepository.Verify(mock => mock.Add(eventId, It.IsAny<int>()),
@@ -615,8 +621,7 @@ namespace EventsRestApi.Tests
                 _fakeTimeProvider.Advance(TimeSpan.FromSeconds(2));
             }
 
-            var exception = await Assert.ThrowsAnyAsync<NotFoundEventException>(() =>
-                bookingServiceTask);
+            var result = await bookingServiceTask;
 
             Assert.Equal(BookingStatus.Rejected, pendingBookings[0].Status);
             Assert.NotNull(pendingBookings[0].ProcessedAt);
@@ -672,8 +677,7 @@ namespace EventsRestApi.Tests
                 _fakeTimeProvider.Advance(TimeSpan.FromSeconds(2));
             }
 
-            var exception = await Assert.ThrowsAnyAsync<FinishedEventException>(() =>
-                bookingServiceTask);
+            var result = await bookingServiceTask;
 
             Assert.Equal(BookingStatus.Rejected, pendingBookings[0].Status);
             Assert.NotNull(pendingBookings[0].ProcessedAt);
