@@ -6,7 +6,7 @@ namespace EventsRestApi.Services
 {
     public class BookingService : IBookingService
     {
-        private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
+        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
 
         private readonly IBookingRepository _bookingRepository;
 
@@ -74,11 +74,7 @@ namespace EventsRestApi.Services
 
             var pendingBookings = _bookingRepository.GetByStatus(BookingStatus.Pending, count);
 
-            var tasks = pendingBookings.Select(booking =>
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                return ProcessBookingAsync(booking, cancellationToken);
-            });
+            var tasks = pendingBookings.Select(booking => ProcessBookingAsync(booking, cancellationToken));
 
             await Task.WhenAll(tasks);
 
@@ -91,7 +87,7 @@ namespace EventsRestApi.Services
 
             Event? foundEvent = null;
 
-            await _semaphoreSlim.WaitAsync();
+            await _semaphoreSlim.WaitAsync(cancellationToken);
             try
             {
                 foundEvent = _eventService.GetById(booking.EventId);
@@ -141,7 +137,7 @@ namespace EventsRestApi.Services
                     booking.Id,
                     booking.Status);
             }
-            catch
+            catch (Exception ex) when (ex is not NotFoundEventException && ex is not FinishedEventException)
             {
                 if (foundEvent != null)
                 {

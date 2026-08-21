@@ -11,7 +11,8 @@
 
         public string? Description { get; set; }
 
-        public DateTime StartAt { 
+        public DateTime StartAt
+        {
             get => _startAt;
             set
             {
@@ -20,7 +21,8 @@
             }
         }
 
-        public DateTime EndAt { 
+        public DateTime EndAt
+        {
             get => _endAt;
             set
             {

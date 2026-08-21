@@ -19,9 +19,26 @@ namespace EventsRestApi.Repositories
 
         public Event Add(Event addingEvent)
         {
-            _events.Add(addingEvent);
+            Event realAddingEvent;
 
-            return addingEvent;
+            if (addingEvent.Id == Guid.Empty)
+            {
+                realAddingEvent = new Event(
+                    Guid.NewGuid(),
+                    addingEvent.Title,
+                    addingEvent.Description,
+                    addingEvent.StartAt,
+                    addingEvent.EndAt,
+                    addingEvent.TotalSeats);
+            }
+            else
+            {
+                realAddingEvent = addingEvent;
+            }
+
+            _events.Add(realAddingEvent);
+
+            return realAddingEvent;
         }
 
         public bool Update(Event newEvent)

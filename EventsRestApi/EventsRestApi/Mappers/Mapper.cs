@@ -19,7 +19,7 @@ namespace EventsRestApi.Mappers
 
         public static Event MapToEvent(EventRequestDto eventDto)
         {
-            return MapToEvent(Guid.NewGuid(), eventDto);
+            return MapToEvent(Guid.Empty, eventDto);
         }
 
         public static EventResponseDto MapToEventResponseDto(Event ev)
