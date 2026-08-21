@@ -61,6 +61,7 @@ namespace EventsRestApi.Controllers
 
         [HttpPost]
         [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public IActionResult Add(EventRequestDto addingEventDto)
         {
             var addedEvent = _eventService.Add(Mapper.MapToEvent(addingEventDto));
@@ -70,6 +71,7 @@ namespace EventsRestApi.Controllers
 
         [HttpPut("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public IActionResult Update(Guid id, EventRequestDto updatingEventDto)
         {
