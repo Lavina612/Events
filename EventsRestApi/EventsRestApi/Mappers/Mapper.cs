@@ -13,7 +13,13 @@ namespace EventsRestApi.Mappers
                 eventDto.Title,
                 eventDto.Description,
                 eventDto.StartAt,
-                eventDto.EndAt);
+                eventDto.EndAt,
+                eventDto.TotalSeats);
+        }
+
+        public static Event MapToEvent(EventRequestDto eventDto)
+        {
+            return MapToEvent(Guid.Empty, eventDto);
         }
 
         public static EventResponseDto MapToEventResponseDto(Event ev)
@@ -23,7 +29,9 @@ namespace EventsRestApi.Mappers
                 ev.Title,
                 ev.Description,
                 ev.StartAt,
-                ev.EndAt);
+                ev.EndAt,
+                ev.TotalSeats,
+                ev.AvailableSeats);
         }
 
         public static BookingResponseDto MapToBookingResponseDto(Booking booking)

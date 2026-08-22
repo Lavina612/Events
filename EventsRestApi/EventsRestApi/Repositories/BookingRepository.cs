@@ -34,12 +34,13 @@ namespace EventsRestApi.Repositories
                 .AsReadOnly();
         }
 
-        public Booking Add(Guid eventId)
+        public Booking Add(Guid eventId, int requestedSeats)
         {
             var addingBooking = new Booking(
                 Guid.NewGuid(),
                 eventId,
                 BookingStatus.Pending,
+                requestedSeats,
                 _timeProvider.GetUtcNow().UtcDateTime);
 
             _bookings.Add(addingBooking);
@@ -56,8 +57,7 @@ namespace EventsRestApi.Repositories
                 return false;
             }
 
-            updatingBooking.Status = newBooking.Status;
-            updatingBooking.ProcessedAt = newBooking.ProcessedAt;
+            updatingBooking.ChangeStatus(newBooking.Status, newBooking.ProcessedAt);
 
             return true;
         }

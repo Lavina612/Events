@@ -30,44 +30,77 @@ namespace EventsRestApi.Middlewares
 
         private async Task HandleException(HttpContext httpContext, Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Unhandled exception. Method = {Method}, Path = {Path}, RequestId = {RequestId}",
-                httpContext.Request.Method,
-                httpContext.Request.Path,
-                httpContext.Request.Headers["x-request-id"]);
+            var error = CreateProblemDetails(ex);
+
+            if (error.Status == StatusCodes.Status500InternalServerError)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unhandled exception. Method = {Method}, Path = {Path}, RequestId = {RequestId}.",
+                    httpContext.Request.Method,
+                    httpContext.Request.Path,
+                    httpContext.Request.Headers["x-request-id"]);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Business exception ({StatusCode}): {Message}. Method = {Method}, Path = {Path}, RequestId = {RequestId}.",
+                    error.Status,
+                    ex.Message.TrimEnd('.'),
+                    httpContext.Request.Method,
+                    httpContext.Request.Path,
+                    httpContext.Request.Headers["x-request-id"]);
+            }
 
             if (httpContext.Response.HasStarted)
             {
                 return;
             }
 
-            var statusCode = MapStatusCode(ex);
-
-            httpContext.Response.StatusCode = statusCode;
+            httpContext.Response.StatusCode = error.Status ?? StatusCodes.Status500InternalServerError;
             httpContext.Response.ContentType = "application/json";
-
-            var error = new ProblemDetails
-            {
-                Status = statusCode,
-                Detail = ex.Message
-            };
-
-            if (ex is AppValidationException ave)
-            {
-                error.Extensions["errors"] = ave.Errors;
-            }
 
             await httpContext.Response.WriteAsJsonAsync(error);
         }
 
-        private static int MapStatusCode(Exception ex)
+        private ProblemDetails CreateProblemDetails(Exception ex)
         {
-            return ex switch
+            var error = new ProblemDetails
             {
-                AppValidationException ve => StatusCodes.Status400BadRequest,
-                _ => StatusCodes.Status500InternalServerError
+                Detail = ex.Message
             };
+
+            switch (ex)
+            {
+                case AppValidationException ave:
+                    error.Status = StatusCodes.Status400BadRequest;
+                    error.Extensions["errors"] = ave.Errors;
+                    break;
+
+                case NotFoundEventException nfee:
+                    error.Status = StatusCodes.Status404NotFound;
+                    error.Extensions["eventId"] = nfee.EventId;
+                    break;
+
+                case NoAvailableSeatsException nase:
+                    error.Status = StatusCodes.Status409Conflict;
+                    error.Extensions["eventId"] = nase.EventId;
+                    error.Extensions["requestedSeats"] = nase.RequestedSeats;
+                    error.Extensions["availableSeats"] = nase.AvailableSeats;
+                    break;
+
+                case FinishedEventException fee:
+                    error.Status = StatusCodes.Status422UnprocessableEntity;
+                    error.Extensions["eventId"] = fee.EventId;
+                    error.Extensions["endAt"] = fee.EndAt;
+                    break;
+
+                default:
+                    error.Status = StatusCodes.Status500InternalServerError;
+                    break;
+            }
+
+            return error;
         }
     }
 }

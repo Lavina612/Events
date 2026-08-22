@@ -1,15 +1,14 @@
-﻿using EventsRestApi.Dto.Request;
-using EventsRestApi.Dto.Response;
+﻿using EventsRestApi.Dto.Response;
+using EventsRestApi.Models;
 
 namespace EventsRestApi.Interfaces
 {
     public interface IEventService
     {
-        PaginatedResult<EventResponseDto> Get(string? title, DateTime? from, DateTime? to, int page, int pageSize);
-        EventResponseDto? GetById(Guid id);
-        EventResponseDto Add(EventRequestDto addingEventDto);
-        bool Update(Guid id, EventRequestDto newEventDto);
+        PaginatedResult<Event> Get(string? title, DateTime? from, DateTime? to, int page, int pageSize);
+        Event? GetById(Guid id);
+        Event Add(Event addingEvent);
+        bool Update(Event updatingEvent);
         bool Delete(Guid id);
-        bool IsEventStillValid(Guid id);
     }
 }
