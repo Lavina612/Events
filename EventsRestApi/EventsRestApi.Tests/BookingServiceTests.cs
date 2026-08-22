@@ -2,7 +2,11 @@
 using EventsRestApi.Interfaces;
 using EventsRestApi.Models;
 using EventsRestApi.Services;
+using EventsRestApi.Settings;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 
@@ -11,6 +15,7 @@ namespace EventsRestApi.Tests
     public class BookingServiceTests
     {
         private readonly DateTimeOffset fixedTime = new DateTimeOffset(2026, 06, 01, 09, 01, 01, TimeSpan.Zero);
+        private readonly BookingBackgroundServiceSettings _settings;
         private readonly FakeTimeProvider _fakeTimeProvider;
         private readonly BookingService _bookingService;
         private readonly Mock<IBookingRepository> _mockBookingRepository;
@@ -18,6 +23,18 @@ namespace EventsRestApi.Tests
 
         public BookingServiceTests()
         {
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", false)
+                .Build();
+
+            var services = new ServiceCollection();
+            services.Configure<BookingBackgroundServiceSettings>(
+                configuration.GetSection(BookingBackgroundServiceSettings.SectionName));
+
+            var serviceProvider = services.BuildServiceProvider();
+            _settings = serviceProvider.GetRequiredService<IOptions<BookingBackgroundServiceSettings>>().Value;
+
             _fakeTimeProvider = new FakeTimeProvider();
             _fakeTimeProvider.SetUtcNow(fixedTime);
 
@@ -215,7 +232,7 @@ namespace EventsRestApi.Tests
             Assert.Equivalent(expectedCreatedBooking, result, true);
             Assert.Equal(availableSeatsAfterBooking, foundEvent.AvailableSeats);
 
-            _mockEventService.Verify(mock => mock.Update(foundEvent), 
+            _mockEventService.Verify(mock => mock.Update(foundEvent),
                 Times.Once);
         }
 
@@ -399,7 +416,7 @@ namespace EventsRestApi.Tests
 
             for (int i = 0; i < bookingRequestsCount; i++)
             {
-                tasks.Add(_bookingService.CreateBookingAsync(eventId, requestedSeats, CancellationToken.None));
+                tasks.Add(Task.Run(() => _bookingService.CreateBookingAsync(eventId, requestedSeats, CancellationToken.None)));
             }
 
             try
@@ -570,7 +587,7 @@ namespace EventsRestApi.Tests
 
             while (!bookingServiceTask.IsCompleted)
             {
-                _fakeTimeProvider.Advance(TimeSpan.FromSeconds(2));
+                _fakeTimeProvider.Advance(TimeSpan.FromMilliseconds(_settings.DelayMilliseconds));
             }
 
             var result = await bookingServiceTask;
@@ -618,7 +635,7 @@ namespace EventsRestApi.Tests
 
             while (!bookingServiceTask.IsCompleted)
             {
-                _fakeTimeProvider.Advance(TimeSpan.FromSeconds(2));
+                _fakeTimeProvider.Advance(TimeSpan.FromMilliseconds(_settings.DelayMilliseconds));
             }
 
             var result = await bookingServiceTask;
@@ -674,7 +691,7 @@ namespace EventsRestApi.Tests
 
             while (!bookingServiceTask.IsCompleted)
             {
-                _fakeTimeProvider.Advance(TimeSpan.FromSeconds(2));
+                _fakeTimeProvider.Advance(TimeSpan.FromMilliseconds(_settings.DelayMilliseconds));
             }
 
             var result = await bookingServiceTask;
@@ -739,7 +756,7 @@ namespace EventsRestApi.Tests
 
             while (!bookingServiceTask.IsCompleted)
             {
-                _fakeTimeProvider.Advance(TimeSpan.FromSeconds(2));
+                _fakeTimeProvider.Advance(TimeSpan.FromMilliseconds(_settings.DelayMilliseconds));
             }
 
             var result = await bookingServiceTask;
