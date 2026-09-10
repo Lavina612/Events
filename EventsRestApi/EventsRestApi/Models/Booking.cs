@@ -6,13 +6,17 @@
 
         public Guid EventId { get; init; }
 
+        public Event Event { get; set; } = null!;
+
         public BookingStatus Status { get; private set; }
 
-        public int BookedSeats { get; init; }
+        public int BookedSeats { get; private set; }
 
         public DateTime CreatedAt { get; init; }
 
         public DateTime? ProcessedAt { get; private set; }
+
+        private Booking() { }
 
         public Booking(
             Guid id,
@@ -48,6 +52,13 @@
 
         public void ChangeStatus(BookingStatus status, DateTime? currentUtcNow)
         {
+            if (currentUtcNow.HasValue && currentUtcNow < CreatedAt)
+            {
+                throw new ArgumentException(
+                    $"Бронирование с Id: {Id}: Дата обработки бронирования не может быть меньше даты создания.",
+                    nameof(ProcessedAt));
+            }
+
             Status = status;
             ProcessedAt = currentUtcNow;
         }

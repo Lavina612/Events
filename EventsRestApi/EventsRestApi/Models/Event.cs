@@ -4,10 +4,12 @@
     {
         private DateTime _startAt;
         private DateTime _endAt;
+        private int _totalSeats;
+        private int _availableSeats;
 
         public Guid Id { get; init; }
 
-        public string Title { get; set; }
+        public string Title { get; set; } = null!;
 
         public string? Description { get; set; }
 
@@ -31,9 +33,24 @@
             }
         }
 
-        public int TotalSeats { get; init; }
+        public int TotalSeats 
+        {
+            get => _totalSeats;
+        }
 
-        public int AvailableSeats { get; private set; }
+        public int AvailableSeats 
+        { 
+            get => _availableSeats; 
+            private set
+            {
+                ValidateAvailableSeats(value, _totalSeats);
+                _availableSeats = value;
+            }
+        }
+
+        public List<Booking> Bookings { get; set; } = null!;
+
+        private Event() { }
 
         public Event(
             Guid id,
@@ -45,21 +62,16 @@
         {
             Id = id;
 
-            if (totalSeats <= 0)
-            {
-                throw new ArgumentException(
-                    $"Событие с Id: {Id}: Количество мест на мероприятии должно быть положительным.",
-                    nameof(TotalSeats));
-            }
-
+            ValidateTotalSeats(totalSeats);
             ValidateDates(startAt, endAt, nameof(endAt));
 
             Title = title;
             Description = description;
+
             _startAt = startAt;
             _endAt = endAt;
-            TotalSeats = totalSeats;
-            AvailableSeats = totalSeats;
+            _totalSeats = totalSeats;
+            _availableSeats = totalSeats;
         }
 
         public bool IsStillActual(DateTime currentUtcNow)
@@ -97,6 +109,33 @@
                 throw new ArgumentException(
                     $"Событие с Id: {Id}: Дата окончания мероприятия должна быть позже даты начала мероприятия.",
                     paramName);
+            }
+        }
+
+        private void ValidateTotalSeats(int totalSeats)
+        {
+            if (totalSeats <= 0)
+            {
+                throw new ArgumentException(
+                    $"Событие с Id: {Id}: Количество мест на мероприятии должно быть положительным.",
+                    nameof(TotalSeats));
+            }
+        }
+
+        private void ValidateAvailableSeats(int availableSeats, int totalSeats)
+        {
+            if (availableSeats < 0)
+            {
+                throw new ArgumentException(
+                    $"Событие с Id: {Id}: Количество доступных мест на мероприятии должно быть неотрицательным.",
+                    nameof(AvailableSeats));
+            }
+
+            if (availableSeats > totalSeats)
+            {
+                throw new ArgumentException(
+                    $"Событие с Id: {Id}: Количество доступных мест на мероприятии не может быть больше общего количества мест.",
+                    nameof(AvailableSeats));
             }
         }
     }
