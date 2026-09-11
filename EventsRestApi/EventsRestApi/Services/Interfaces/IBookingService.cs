@@ -1,6 +1,6 @@
 ﻿using EventsRestApi.Models;
 
-namespace EventsRestApi.Interfaces
+namespace EventsRestApi.Services.Interfaces
 {
     public interface IBookingService
     {

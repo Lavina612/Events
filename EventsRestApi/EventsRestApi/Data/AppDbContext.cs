@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EventsRestApi.Data
 {
-    internal sealed class AppDbContext : DbContext
+    public class AppDbContext : DbContext
     {
         public DbSet<Event> Events => Set<Event>();
 

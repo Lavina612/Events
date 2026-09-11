@@ -1,6 +1,6 @@
 ﻿using EventsRestApi.Dto.Response;
-using EventsRestApi.Interfaces;
 using EventsRestApi.Mappers;
+using EventsRestApi.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EventsRestApi.Controllers
@@ -19,7 +19,7 @@ namespace EventsRestApi.Controllers
         [HttpGet("{id:guid}")]
         [ProducesResponseType(typeof(BookingResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<BookingResponseDto>> GetById(Guid id, CancellationToken cancellationToken)
+        public async Task<ActionResult<BookingResponseDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             var foundBooking = await _bookingService.GetBookingByIdAsync(id, cancellationToken);
 

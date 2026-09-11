@@ -1,4 +1,4 @@
-﻿using EventsRestApi.Interfaces;
+﻿using EventsRestApi.Services.Interfaces;
 using EventsRestApi.Settings;
 using Microsoft.Extensions.Options;
 

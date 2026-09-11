@@ -1,7 +1,7 @@
 ﻿using EventsRestApi.Dto.Request;
 using EventsRestApi.Dto.Response;
-using EventsRestApi.Interfaces;
 using EventsRestApi.Mappers;
+using EventsRestApi.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
@@ -25,14 +25,15 @@ namespace EventsRestApi.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(PaginatedResult<EventResponseDto>), StatusCodes.Status200OK)]
-        public ActionResult<PaginatedResult<EventResponseDto>> GetAll(
+        public async Task<ActionResult<PaginatedResult<EventResponseDto>>> GetAllAsync(
+            CancellationToken cancellationToken,
             [FromQuery] string? title,
             [FromQuery] DateTime? from,
             [FromQuery] DateTime? to,
             [FromQuery][Range(1, int.MaxValue, ErrorMessage = "Номер страницы должен быть положительным.")] int page = 1,
             [FromQuery][Range(1, 100, ErrorMessage = "Размер страницы должен быть от 1 до 100.")] int pageSize = 10)
         {
-            var resultWithEvents = _eventService.Get(title, from, to, page, pageSize);
+            var resultWithEvents = await _eventService.GetPageAsync(title, from, to, page, pageSize, cancellationToken);
 
             return new PaginatedResult<EventResponseDto>(
                 resultWithEvents.ItemsForPage.Select(Mapper.MapToEventResponseDto).ToList(),
@@ -45,9 +46,9 @@ namespace EventsRestApi.Controllers
         [HttpGet("{id:guid}")]
         [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public ActionResult<EventResponseDto> GetById(Guid id)
+        public async Task<ActionResult<EventResponseDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
-            var foundEvent = _eventService.GetById(id);
+            var foundEvent = await _eventService.GetByIdAsync(id, cancellationToken);
 
             if (foundEvent == null)
             {
@@ -62,20 +63,20 @@ namespace EventsRestApi.Controllers
         [HttpPost]
         [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public IActionResult Add(EventRequestDto addingEventDto)
+        public async Task<IActionResult> AddAsync(EventRequestDto addingEventDto, CancellationToken cancellationToken)
         {
-            var addedEvent = _eventService.Add(Mapper.MapToEvent(addingEventDto));
+            var addedEvent = await _eventService.AddAsync(Mapper.MapToEvent(addingEventDto), cancellationToken);
 
-            return CreatedAtAction(nameof(GetById), new { id = addedEvent.Id }, Mapper.MapToEventResponseDto(addedEvent));
+            return CreatedAtAction(nameof(GetByIdAsync), new { id = addedEvent.Id }, Mapper.MapToEventResponseDto(addedEvent));
         }
 
         [HttpPut("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public IActionResult Update(Guid id, EventRequestDto updatingEventDto)
+        public async Task<IActionResult> UpdateAsync(Guid id, EventRequestDto updatingEventDto, CancellationToken cancellationToken)
         {
-            var isUpdated = _eventService.Update(Mapper.MapToEvent(id, updatingEventDto));
+            var isUpdated = await _eventService.UpdateAsync(Mapper.MapToEvent(id, updatingEventDto), cancellationToken);
 
             if (!isUpdated)
             {
@@ -90,9 +91,9 @@ namespace EventsRestApi.Controllers
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public IActionResult Delete(Guid id)
+        public async Task<IActionResult> DeleteAsync(Guid id, CancellationToken cancellationToken)
         {
-            var isDeleted = _eventService.Delete(id);
+            var isDeleted = await _eventService.DeleteAsync(id, cancellationToken);
 
             if (!isDeleted)
             {
@@ -109,7 +110,7 @@ namespace EventsRestApi.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
-        public async Task<ActionResult<BookingResponseDto>> CreateBooking(
+        public async Task<ActionResult<BookingResponseDto>> CreateBookingAsync(
             Guid eventId,
             [FromQuery][Range(1, int.MaxValue, ErrorMessage = "Количество бронируемых мест должно быть положительным.")] int requestedSeats,
             CancellationToken cancellationToken)
