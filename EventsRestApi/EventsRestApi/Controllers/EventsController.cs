@@ -25,13 +25,13 @@ namespace EventsRestApi.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(PaginatedResult<EventResponseDto>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<PaginatedResult<EventResponseDto>>> GetAllAsync(
-            CancellationToken cancellationToken,
+        public async Task<ActionResult<PaginatedResult<EventResponseDto>>> GetAll(
             [FromQuery] string? title,
             [FromQuery] DateTime? from,
             [FromQuery] DateTime? to,
             [FromQuery][Range(1, int.MaxValue, ErrorMessage = "Номер страницы должен быть положительным.")] int page = 1,
-            [FromQuery][Range(1, 100, ErrorMessage = "Размер страницы должен быть от 1 до 100.")] int pageSize = 10)
+            [FromQuery][Range(1, 100, ErrorMessage = "Размер страницы должен быть от 1 до 100.")] int pageSize = 10,
+            CancellationToken cancellationToken = default)
         {
             var resultWithEvents = await _eventService.GetPageAsync(title, from, to, page, pageSize, cancellationToken);
 
@@ -46,7 +46,7 @@ namespace EventsRestApi.Controllers
         [HttpGet("{id:guid}")]
         [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<EventResponseDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+        public async Task<ActionResult<EventResponseDto>> GetById(Guid id, CancellationToken cancellationToken = default)
         {
             var foundEvent = await _eventService.GetByIdAsync(id, cancellationToken);
 
@@ -63,18 +63,18 @@ namespace EventsRestApi.Controllers
         [HttpPost]
         [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> AddAsync(EventRequestDto addingEventDto, CancellationToken cancellationToken)
+        public async Task<IActionResult> Add(EventRequestDto addingEventDto, CancellationToken cancellationToken = default)
         {
             var addedEvent = await _eventService.AddAsync(Mapper.MapToEvent(addingEventDto), cancellationToken);
 
-            return CreatedAtAction(nameof(GetByIdAsync), new { id = addedEvent.Id }, Mapper.MapToEventResponseDto(addedEvent));
+            return CreatedAtAction(nameof(GetById), new { id = addedEvent.Id }, Mapper.MapToEventResponseDto(addedEvent));
         }
 
         [HttpPut("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> UpdateAsync(Guid id, EventRequestDto updatingEventDto, CancellationToken cancellationToken)
+        public async Task<IActionResult> Update(Guid id, EventRequestDto updatingEventDto, CancellationToken cancellationToken = default)
         {
             var isUpdated = await _eventService.UpdateAsync(Mapper.MapToEvent(id, updatingEventDto), cancellationToken);
 
@@ -91,7 +91,7 @@ namespace EventsRestApi.Controllers
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DeleteAsync(Guid id, CancellationToken cancellationToken)
+        public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken = default)
         {
             var isDeleted = await _eventService.DeleteAsync(id, cancellationToken);
 
@@ -110,10 +110,10 @@ namespace EventsRestApi.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
-        public async Task<ActionResult<BookingResponseDto>> CreateBookingAsync(
+        public async Task<ActionResult<BookingResponseDto>> CreateBooking(
             Guid eventId,
             [FromQuery][Range(1, int.MaxValue, ErrorMessage = "Количество бронируемых мест должно быть положительным.")] int requestedSeats,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken = default)
         {
             var createdBooking = await _bookingService.CreateBookingAsync(eventId, requestedSeats, cancellationToken);
 

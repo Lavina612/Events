@@ -114,7 +114,7 @@ namespace EventsRestApi.Services
 
                     _logger.LogWarning(
                         "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: события с Id: {EventId} уже завершилось. " +
-                        "Количество доступных мест обратно увеличено на {BookingSeats}",
+                        "Количество доступных мест обратно увеличено на {BookedSeats}",
                         booking.ProcessedAt,
                         booking.Id,
                         booking.EventId,
