@@ -1,33 +1,50 @@
-﻿using EventsRestApi.Dto.Response;
-using EventsRestApi.Interfaces;
+﻿using EventsRestApi.Data;
+using EventsRestApi.Data.Repositories;
+using EventsRestApi.Data.Repositories.Interfaces;
+using EventsRestApi.Dto.Response;
 using EventsRestApi.Models;
 using EventsRestApi.Services;
-using Microsoft.Extensions.Time.Testing;
+using EventsRestApi.Services.Interfaces;
+using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 namespace EventsRestApi.Tests
 {
-    public class EventServiceTests
+    public class EventServiceTests : IDisposable
     {
         private readonly DateTimeOffset fixedTime = new DateTimeOffset(2026, 06, 05, 09, 05, 05, TimeSpan.Zero);
         private readonly List<Event> allEvents = [];
-        private readonly EventService _eventService;
-        private readonly Mock<IEventRepository> _mockEventRepository;
+        private readonly ServiceProvider _serviceProvider;
+        private readonly AppDbContext _context;
+        private readonly IEventService _eventService;
 
         public EventServiceTests()
         {
-            var fakeTimeProvider = new FakeTimeProvider();
-            fakeTimeProvider.SetUtcNow(fixedTime);
+            var dbName = Guid.NewGuid().ToString();
+            var services = new ServiceCollection();
+            services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase(dbName));
+
+            services.AddScoped<IEventRepository, EventRepository>();
+            services.AddScoped<IEventService, EventService>();
+
+            _serviceProvider = services.BuildServiceProvider();
+            _context = _serviceProvider.GetRequiredService<AppDbContext>();
+            _eventService = _serviceProvider.GetRequiredService<IEventService>();
 
             FillTestData();
+        }
 
-            _mockEventRepository = new Mock<IEventRepository>();
-
-            _eventService = new EventService(_mockEventRepository.Object);
+        public void Dispose()
+        {
+            _context.Database.EnsureDeleted();
+            _context.Dispose();
+            _serviceProvider.Dispose();
         }
 
         [Fact]
-        public void GetAll_NoParamsWithMaxPageSize_ReturnAllEvents()
+        public async Task GetPageAsync_NoParamsWithMaxPageSize_ReturnAllEvents()
         {
             /*---ARRANGE---*/
             var page = 1;
@@ -42,12 +59,8 @@ namespace EventsRestApi.Tests
                 pageSize,
                 totalPages);
 
-            _mockEventRepository
-                .Setup(mock => mock.Get())
-                .Returns(allEvents);
-
             /*---ACT---*/
-            var result = _eventService.Get(null, null, null, page, pageSize);
+            var result = await _eventService.GetPageAsync(null, null, null, page, pageSize, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.Equal(expected.ItemsForPage.Select(x => x.Id), result.ItemsForPage.Select(x => x.Id));
@@ -55,7 +68,7 @@ namespace EventsRestApi.Tests
         }
 
         [Fact]
-        public void GetAll_WithTitleParam_ReturnFilteredByTitleIgnoreCase()
+        public async Task GetPageAsync_WithTitleParam_ReturnFilteredByTitleIgnoreCase()
         {
             /*---ARRANGE---*/
             var titleParam = allEvents[0].Title.Substring(2).ToUpper();
@@ -71,19 +84,15 @@ namespace EventsRestApi.Tests
                 pageSize,
                 totalPages);
 
-            _mockEventRepository
-                .Setup(mock => mock.Get())
-                .Returns(allEvents);
-
             /*---ACT---*/
-            var result = _eventService.Get(titleParam, null, null, page, pageSize);
+            var result = await _eventService.GetPageAsync(titleParam, null, null, page, pageSize, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.Equivalent(expected, result, true);
         }
 
         [Fact]
-        public void GetAll_WithStartAtAndEndAtParams_ReturnFilteredBetweenDates()
+        public async Task GetPageAsync_WithStartAtAndEndAtParams_ReturnFilteredBetweenDates()
         {
             /*---ARRANGE---*/
             var page = 1;
@@ -103,12 +112,8 @@ namespace EventsRestApi.Tests
                 pageSize,
                 totalPages);
 
-            _mockEventRepository
-                .Setup(mock => mock.Get())
-                .Returns(allEvents);
-
             /*---ACT---*/
-            var result = _eventService.Get(null, startAt, endAt, page, pageSize);
+            var result = await _eventService.GetPageAsync(null, startAt, endAt, page, pageSize, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.Equal(expected.ItemsForPage.Select(x => x.Id), result.ItemsForPage.Select(x => x.Id));
@@ -116,7 +121,7 @@ namespace EventsRestApi.Tests
         }
 
         [Fact]
-        public void GetAll_WithTitleAndStartAtAndEndAtParams_ReturnFilteredByTitleAndBetweenDates()
+        public async Task GetPageAsync_WithTitleAndStartAtAndEndAtParams_ReturnFilteredByTitleAndBetweenDates()
         {
             /*---ARRANGE---*/
             var page = 1;
@@ -136,19 +141,15 @@ namespace EventsRestApi.Tests
                 pageSize,
                 totalPages);
 
-            _mockEventRepository
-                .Setup(mock => mock.Get())
-                .Returns(allEvents);
-
             /*---ACT---*/
-            var result = _eventService.Get("3", startAt, endAt, page, pageSize);
+            var result = await _eventService.GetPageAsync("3", startAt, endAt, page, pageSize, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.Equivalent(expected, result, true);
         }
 
         [Fact]
-        public void GetAll_WithPageAndPageSize_ReturnEventsForPage()
+        public async Task GetPageAsync_WithPageAndPageSize_ReturnEventsForPage()
         {
             /*---ARRANGE---*/
             var page = 2;
@@ -163,12 +164,8 @@ namespace EventsRestApi.Tests
                 pageSize,
                 totalPages);
 
-            _mockEventRepository
-                .Setup(mock => mock.Get())
-                .Returns(allEvents);
-
             /*---ACT---*/
-            var result = _eventService.Get(null, null, null, page, pageSize);
+            var result = await _eventService.GetPageAsync(null, null, null, page, pageSize, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.Equal(expected.ItemsForPage.Select(x => x.Id), result.ItemsForPage.Select(x => x.Id));
@@ -176,7 +173,7 @@ namespace EventsRestApi.Tests
         }
 
         [Fact]
-        public void GetAll_NoEvents_ReturnEmptyPage()
+        public async Task GetPageAsync_NoEvents_ReturnEmptyPage()
         {
             /*---ARRANGE---*/
             var page = 1;
@@ -191,19 +188,18 @@ namespace EventsRestApi.Tests
                 pageSize,
                 totalPages);
 
-            _mockEventRepository
-                .Setup(mock => mock.Get())
-                .Returns([]);
-
             /*---ACT---*/
-            var result = _eventService.Get(null, null, null, page, pageSize);
+            _context.Events.RemoveRange(_context.Events);
+            _context.SaveChanges();
+
+            var result = await _eventService.GetPageAsync(null, null, null, page, pageSize, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.Equivalent(expected, result, true);
         }
 
         [Fact]
-        public void GetAll_WithPageMoreThanTotalPages_ReturnEmptyPage()
+        public async Task GetPageAsync_WithPageMoreThanTotalPages_ReturnEmptyPage()
         {
             /*---ARRANGE---*/
             var page = 10;
@@ -218,54 +214,70 @@ namespace EventsRestApi.Tests
                 pageSize,
                 totalPages);
 
-            _mockEventRepository
-                .Setup(mock => mock.Get())
-                .Returns(allEvents);
-
             /*---ACT---*/
-            var result = _eventService.Get(null, null, null, page, pageSize);
+            var result = await _eventService.GetPageAsync(null, null, null, page, pageSize, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.Equivalent(expected, result, true);
         }
 
         [Fact]
-        public void GetById_WithExistingId_ReturnEventById()
+        public async Task GetPageAsync_CancelBeforeStart_ThrowOperationCancelledException()
+        {
+            /*---ARRANGE---*/
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            /*---ACT & ASSERT---*/
+            var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+                await _eventService.GetPageAsync(string.Empty, default(DateTime), default(DateTime), 0, 0, cts.Token));
+
+            Assert.Equal(cts.Token, exception.CancellationToken);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_WithExistingId_ReturnEventById()
         {
             /*---ARRANGE---*/
             var id = allEvents[2].Id;
             var expected = allEvents[2];
 
-            _mockEventRepository
-                .Setup(mock => mock.GetById(id))
-                .Returns(allEvents[2]);
-
             /*---ACT---*/
-            var result = _eventService.GetById(id);
+            var result = await _eventService.GetByIdAsync(id, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.Equivalent(expected, result, true);
         }
 
         [Fact]
-        public void GetById_WithNonExistentId_ReturnNull()
+        public async Task GetByIdAsync_WithNonExistentId_ReturnNull()
         {
             /*---ARRANGE---*/
             var id = Guid.Empty;
 
-            _mockEventRepository
-                .Setup(mock => mock.GetById(id))
-                .Returns((Event?)null);
-
             /*---ACT---*/
-            var result = _eventService.GetById(id);
+            var result = await _eventService.GetByIdAsync(id, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.Null(result);
         }
 
         [Fact]
-        public void Add_CorrectEventDto_EventIdWasGenerated()
+        public async Task GetByIdAsync_CancelBeforeStart_ThrowOperationCancelledException()
+        {
+            /*---ARRANGE---*/
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            /*---ACT & ASSERT---*/
+            var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+                await _eventService.GetByIdAsync(Guid.Empty, cts.Token));
+
+            Assert.Equal(cts.Token, exception.CancellationToken);
+        }
+
+        [Fact]
+        public async Task AddAsync_CorrectEventDto_EventIdWasGenerated()
         {
             /*---ARRANGE---*/
             //Дата startAt высчитывается относительно fixedTime: 2026.06.06 09:06:00
@@ -280,27 +292,32 @@ namespace EventsRestApi.Tests
                 endAt,
                 6);
 
-            var expectedAddedEvent = new Event(
-                new Guid("E0000000-0000-0000-0000-000000000006"),
-                addingEvent.Title,
-                addingEvent.Description,
-                addingEvent.StartAt,
-                addingEvent.EndAt,
-                addingEvent.TotalSeats);
-
-            _mockEventRepository
-                .Setup(mock => mock.Add(It.IsAny<Event>()))
-                .Returns(expectedAddedEvent);
-
             /*---ACT---*/
-            var result = _eventService.Add(addingEvent);
+            var result = await _eventService.AddAsync(addingEvent, CancellationToken.None);
 
             /*---ASSERT---*/
-            Assert.Equivalent(expectedAddedEvent, result, true);
+            Assert.NotEqual(Guid.Empty, result.Id);
+            result.Should().BeEquivalentTo(addingEvent, options => options.Excluding(x => x.Id));
         }
 
         [Fact]
-        public void Update_WithExistingId_ReturnTrue()
+        public async Task AddAsync_CancelBeforeStart_ThrowOperationCancelledException()
+        {
+            /*---ARRANGE---*/
+            var @event = new Event(Guid.Empty, string.Empty, string.Empty, DateTime.UtcNow, DateTime.UtcNow, 1);
+
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            /*---ACT & ASSERT---*/
+            var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+                await _eventService.AddAsync(@event, cts.Token));
+
+            Assert.Equal(cts.Token, exception.CancellationToken);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_WithExistingId_ReturnTrue()
         {
             /*---ARRANGE---*/
             var updatingEvent = allEvents[0];
@@ -313,19 +330,15 @@ namespace EventsRestApi.Tests
                 updatingEvent.EndAt.AddDays(1),
                 updatingEvent.TotalSeats);
 
-            _mockEventRepository
-                .Setup(mock => mock.Update(updatedEvent))
-                .Returns(true);
-
             /*---ACT---*/
-            var result = _eventService.Update(updatedEvent);
+            var result = await _eventService.UpdateAsync(updatedEvent, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.True(result);
         }
 
         [Fact]
-        public void Update_WithNonExistentId_ReturnFalse()
+        public async Task UpdateAsync_WithNonExistentId_ReturnFalse()
         {
             /*---ARRANGE---*/
             var id = Guid.Empty;
@@ -342,49 +355,67 @@ namespace EventsRestApi.Tests
                 endAt,
                 1);
 
-            _mockEventRepository
-                .Setup(mock => mock.Update(updatingEvent))
-                .Returns(false);
-
             /*---ACT---*/
-            var result = _eventService.Update(updatingEvent);
+            var result = await _eventService.UpdateAsync(updatingEvent, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.False(result);
         }
 
         [Fact]
-        public void Delete_WithExistingId_ReturnTrue()
+        public async Task UpdateAsync_CancelBeforeStart_ThrowOperationCancelledException()
+        {
+            /*---ARRANGE---*/
+            var @event = new Event(Guid.Empty, string.Empty, string.Empty, DateTime.UtcNow, DateTime.UtcNow, 1);
+
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            /*---ACT & ASSERT---*/
+            var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+                await _eventService.UpdateAsync(@event, cts.Token));
+
+            Assert.Equal(cts.Token, exception.CancellationToken);
+        }
+
+        [Fact]
+        public async Task DeleteAsync_WithExistingId_ReturnTrue()
         {
             /*---ARRANGE---*/
             var id = allEvents.Last().Id;
 
-            _mockEventRepository
-                .Setup(mock => mock.Delete(id))
-                .Returns(true);
-
             /*---ACT---*/
-            var result = _eventService.Delete(id);
+            var result = await _eventService.DeleteAsync(id, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.True(result);
         }
 
         [Fact]
-        public void Delete_WithNonExistentId_ReturnFalse()
+        public async Task DeleteAsync_WithNonExistentId_ReturnFalse()
         {
             /*---ARRANGE---*/
             var id = Guid.Empty;
 
-            _mockEventRepository
-                .Setup(mock => mock.Delete(id))
-                .Returns(false);
-
             /*---ACT---*/
-            var result = _eventService.Delete(id);
+            var result = await _eventService.DeleteAsync(id, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.False(result);
+        }
+
+        [Fact]
+        public async Task DeleteAsync_CancelBeforeStart_ThrowOperationCancelledException()
+        {
+            /*---ARRANGE---*/
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            /*---ACT & ASSERT---*/
+            var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+                await _eventService.DeleteAsync(Guid.Empty, cts.Token));
+
+            Assert.Equal(cts.Token, exception.CancellationToken);
         }
 
         private void FillTestData()
@@ -396,7 +427,7 @@ namespace EventsRestApi.Tests
             for (int i = 1; i <= eventCount; i++)
             {
                 //Дата startAt высчитывается относительно fixedTime: 2026.06.01-05 09:01-05:01-05
-                var startAt = fixedTime.UtcDateTime.AddDays(i - eventCount).AddMinutes(i - eventCount).AddSeconds(i - eventCount);
+                var startAt = fixedTime.AddDays(i - eventCount).AddMinutes(i - eventCount).AddSeconds(i - eventCount).UtcDateTime;
 
                 var currentEvent = new Event(
                     new Guid($"E0000000-0000-0000-0000-00000000000{i}"),
@@ -408,6 +439,9 @@ namespace EventsRestApi.Tests
 
                 allEvents.Add(currentEvent);
             }
+
+            _context.Events.AddRange(allEvents);
+            _context.SaveChanges();
         }
     }
 }
