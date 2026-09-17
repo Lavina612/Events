@@ -25,6 +25,7 @@ namespace EventsRestApi.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(PaginatedResult<EventResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PaginatedResult<EventResponseDto>>> GetAll(
             [FromQuery] string? title,
             [FromQuery] DateTime? from,
@@ -39,13 +40,13 @@ namespace EventsRestApi.Controllers
                 resultWithEvents.ItemsForPage.Select(Mapper.MapToEventResponseDto).ToList(),
                 resultWithEvents.TotalCount,
                 resultWithEvents.Page,
-                resultWithEvents.PageSize,
-                resultWithEvents.TotalPages);
+                resultWithEvents.PageSize);
         }
 
         [HttpGet("{id:guid}")]
         [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<EventResponseDto>> GetById(Guid id, CancellationToken cancellationToken = default)
         {
             var foundEvent = await _eventService.GetByIdAsync(id, cancellationToken);
@@ -63,6 +64,7 @@ namespace EventsRestApi.Controllers
         [HttpPost]
         [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Add(EventRequestDto addingEventDto, CancellationToken cancellationToken = default)
         {
             var addedEvent = await _eventService.AddAsync(Mapper.MapToEvent(addingEventDto), cancellationToken);
@@ -74,6 +76,7 @@ namespace EventsRestApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Update(Guid id, EventRequestDto updatingEventDto, CancellationToken cancellationToken = default)
         {
             var isUpdated = await _eventService.UpdateAsync(Mapper.MapToEvent(id, updatingEventDto), cancellationToken);
@@ -91,6 +94,7 @@ namespace EventsRestApi.Controllers
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken = default)
         {
             var isDeleted = await _eventService.DeleteAsync(id, cancellationToken);
@@ -110,6 +114,7 @@ namespace EventsRestApi.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<BookingResponseDto>> CreateBooking(
             Guid eventId,
             [FromQuery][Range(1, int.MaxValue, ErrorMessage = "Количество бронируемых мест должно быть положительным.")] int requestedSeats,

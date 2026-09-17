@@ -7,9 +7,9 @@
         private int _totalSeats;
         private int _availableSeats;
 
-        public Guid Id { get; init; }
+        public Guid Id { get; private set; }
 
-        public string Title { get; set; } = null!;
+        public string Title { get; set; }
 
         public string? Description { get; set; }
 
@@ -33,14 +33,14 @@
             }
         }
 
-        public int TotalSeats 
+        public int TotalSeats
         {
             get => _totalSeats;
         }
 
-        public int AvailableSeats 
-        { 
-            get => _availableSeats; 
+        public int AvailableSeats
+        {
+            get => _availableSeats;
             private set
             {
                 ValidateAvailableSeats(value, _totalSeats);
@@ -48,9 +48,9 @@
             }
         }
 
-        public List<Booking> Bookings { get; set; } = null!;
+        public List<Booking> Bookings { get; private set; } = null!;
 
-        private Event() { }
+        private Event() { Title = null!; }
 
         public Event(
             Guid id,

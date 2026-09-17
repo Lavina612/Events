@@ -36,7 +36,7 @@ namespace EventsRestApi.Data.Repositories
                 .OrderBy(x => x.CreatedAt)
                 .Take(count)
                 .ToListAsync(cancellationToken);
-            
+
             return bookingsByStatus.AsReadOnly();
         }
 

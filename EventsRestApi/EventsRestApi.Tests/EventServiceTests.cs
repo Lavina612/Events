@@ -50,14 +50,12 @@ namespace EventsRestApi.Tests
             var page = 1;
             var pageSize = int.MaxValue;
             List<Event> expectedEvents = allEvents.OrderBy(x => x.StartAt).ToList();
-            var totalPages = (expectedEvents.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<Event>(
                 expectedEvents,
                 expectedEvents.Count,
                 page,
-                pageSize,
-                totalPages);
+                pageSize);
 
             /*---ACT---*/
             var result = await _eventService.GetPageAsync(null, null, null, page, pageSize, CancellationToken.None);
@@ -75,14 +73,12 @@ namespace EventsRestApi.Tests
             var page = 1;
             var pageSize = int.MaxValue;
             List<Event> expectedEvents = [allEvents[0]];
-            var totalPages = (expectedEvents.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<Event>(
                 expectedEvents,
                 expectedEvents.Count,
                 page,
-                pageSize,
-                totalPages);
+                pageSize);
 
             /*---ACT---*/
             var result = await _eventService.GetPageAsync(titleParam, null, null, page, pageSize, CancellationToken.None);
@@ -103,14 +99,12 @@ namespace EventsRestApi.Tests
             var endAt = startAt.AddDays(6).AddMinutes(4).AddSeconds(4);
 
             List<Event> expectedEvents = allEvents[2..4].OrderBy(x => x.StartAt).ToList();
-            var totalPages = (expectedEvents.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<Event>(
                 expectedEvents,
                 expectedEvents.Count,
                 page,
-                pageSize,
-                totalPages);
+                pageSize);
 
             /*---ACT---*/
             var result = await _eventService.GetPageAsync(null, startAt, endAt, page, pageSize, CancellationToken.None);
@@ -132,14 +126,12 @@ namespace EventsRestApi.Tests
             var endAt = startAt.AddDays(6).AddMinutes(4).AddSeconds(4);
 
             List<Event> expectedEvents = [allEvents[2]];
-            var totalPages = (expectedEvents.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<Event>(
                 expectedEvents,
                 expectedEvents.Count,
                 page,
-                pageSize,
-                totalPages);
+                pageSize);
 
             /*---ACT---*/
             var result = await _eventService.GetPageAsync("3", startAt, endAt, page, pageSize, CancellationToken.None);
@@ -155,14 +147,12 @@ namespace EventsRestApi.Tests
             var page = 2;
             var pageSize = 2;
             List<Event> expectedEvents = allEvents.OrderBy(x => x.StartAt).Skip(2).Take(2).ToList();
-            var totalPages = (allEvents.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<Event>(
                 expectedEvents,
                 allEvents.Count,
                 page,
-                pageSize,
-                totalPages);
+                pageSize);
 
             /*---ACT---*/
             var result = await _eventService.GetPageAsync(null, null, null, page, pageSize, CancellationToken.None);
@@ -179,14 +169,12 @@ namespace EventsRestApi.Tests
             var page = 1;
             var pageSize = 10;
             List<Event> expectedEvents = [];
-            var totalPages = (expectedEvents.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<Event>(
                 expectedEvents,
                 expectedEvents.Count,
                 page,
-                pageSize,
-                totalPages);
+                pageSize);
 
             /*---ACT---*/
             _context.Events.RemoveRange(_context.Events);
@@ -205,14 +193,12 @@ namespace EventsRestApi.Tests
             var page = 10;
             var pageSize = 10;
             List<Event> expectedEvents = [];
-            var totalPages = (allEvents.Count + pageSize - 1) / pageSize;
 
             var expected = new PaginatedResult<Event>(
                 expectedEvents,
                 allEvents.Count,
                 page,
-                pageSize,
-                totalPages);
+                pageSize);
 
             /*---ACT---*/
             var result = await _eventService.GetPageAsync(null, null, null, page, pageSize, CancellationToken.None);

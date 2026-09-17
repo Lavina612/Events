@@ -17,7 +17,9 @@ builder.Services.Configure<BookingBackgroundServiceSettings>(
     builder.Configuration.GetSection(BookingBackgroundServiceSettings.SectionName));
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+    options
+        .UseNpgsql(builder.Configuration.GetConnectionString("Default"))
+        .UseSnakeCaseNamingConvention());
 
 builder.Services.AddHostedService<BookingBackgroundService>();
 

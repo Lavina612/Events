@@ -34,12 +34,9 @@ namespace EventsRestApi.Services
                 filteringEventsEnumerable = filteringEventsEnumerable.Where(x => x.EndAt <= to);
             }
 
-            var filteredEvents = filteringEventsEnumerable.ToList();
+            var allFilteredEvents = filteringEventsEnumerable.ToList();
 
-            var totalFilteredEventsCount = filteredEvents.Count;
-            var totalPages = (totalFilteredEventsCount + pageSize - 1) / pageSize;
-
-            var filteredEventsForPage = filteredEvents
+            var filteredEventsForPage = allFilteredEvents
                 .OrderBy(x => x.StartAt)
                 .Skip(pageSize * (page - 1))
                 .Take(pageSize)
@@ -47,10 +44,9 @@ namespace EventsRestApi.Services
 
             return new PaginatedResult<Event>(
                 filteredEventsForPage,
-                totalFilteredEventsCount,
+                allFilteredEvents.Count,
                 page,
-                pageSize,
-                totalPages);
+                pageSize);
         }
 
         public async Task<Event?> GetByIdAsync(Guid id, CancellationToken cancellationToken)

@@ -70,8 +70,6 @@ namespace EventsRestApi.Services
 
         public async Task<int> ProcessPendingBookingsBunchAsync(int count, CancellationToken cancellationToken)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
             var pendingBookings = await _bookingRepository.GetByStatusAsync(BookingStatus.Pending, count, cancellationToken);
 
             var tasks = pendingBookings.Select(booking => ProcessBookingAsync(booking, cancellationToken));
@@ -132,22 +130,41 @@ namespace EventsRestApi.Services
                     booking.Id,
                     booking.Status);
             }
-            catch (Exception ex)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                _logger.LogError(
-                    ex,
-                    "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: неизвестная ошибка.",
+                _logger.LogInformation(
+                    "{ProcessedAt}: Обработка бронирования с Id: {BookingId} была отменена.",
                     booking.ProcessedAt,
                     booking.Id);
 
-                if (foundEvent != null)
+                throw;
+            }
+            catch (Exception ex)
+            {
+                try
                 {
-                    foundEvent.ReleaseSeats(booking.BookedSeats);
-                    await _bookingRepository.SaveContextAsync(cancellationToken);
-                }
+                    if (foundEvent != null)
+                    {
+                        foundEvent.ReleaseSeats(booking.BookedSeats);
+                    }
 
-                booking.Reject(_timeProvider.GetUtcNow().UtcDateTime);
-                await _bookingRepository.SaveContextAsync(cancellationToken);
+                    booking.Reject(_timeProvider.GetUtcNow().UtcDateTime);
+                    await _bookingRepository.SaveContextAsync(cancellationToken);
+
+                    _logger.LogError(
+                        ex,
+                        "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: неизвестная ошибка.",
+                        booking.ProcessedAt,
+                        booking.Id);
+                }
+                catch (Exception innerEx) 
+                {
+                    _logger.LogCritical(
+                        innerEx,
+                        "{ProcessedAt}: Не удалось отклонить бронирование с Id: {BookingId}: неизвестная ошибка.",
+                        booking.ProcessedAt,
+                        booking.Id);
+                }
             }
             finally
             {

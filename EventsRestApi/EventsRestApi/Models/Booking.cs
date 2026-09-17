@@ -2,21 +2,21 @@
 {
     public class Booking
     {
-        public Guid Id { get; init; }
+        public Guid Id { get; private set; }
 
-        public Guid EventId { get; init; }
+        public Guid EventId { get; private set; }
 
-        public Event Event { get; set; } = null!;
+        public Event Event { get; private set; }
 
         public BookingStatus Status { get; private set; }
 
         public int BookedSeats { get; private set; }
 
-        public DateTime CreatedAt { get; init; }
+        public DateTime CreatedAt { get; private set; }
 
         public DateTime? ProcessedAt { get; private set; }
 
-        private Booking() { }
+        private Booking() { Event = null!; }
 
         public Booking(
             Guid id,

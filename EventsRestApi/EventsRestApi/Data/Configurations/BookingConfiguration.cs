@@ -9,10 +9,10 @@ namespace EventsRestApi.Data.Configurations
         public void Configure(EntityTypeBuilder<Booking> builder)
         {
             builder
-                .ToTable("bookings", b =>
+                .ToTable(b =>
                 {
-                    b.HasCheckConstraint("CK_Booking_BookedSeats", "\"BookedSeats\" > 0");
-                    b.HasCheckConstraint("CK_Booking_Dates", "\"ProcessedAt\" IS NULL OR \"CreatedAt\" <= \"ProcessedAt\"");
+                    b.HasCheckConstraint("CK_Booking_BookedSeats", "\"booked_seats\" > 0");
+                    b.HasCheckConstraint("CK_Booking_Dates", "\"processed_at\" IS NULL OR \"created_at\" <= \"processed_at\"");
                 });
 
             builder

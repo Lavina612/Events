@@ -9,11 +9,11 @@ namespace EventsRestApi.Data.Configurations
         public void Configure(EntityTypeBuilder<Event> builder)
         {
             builder
-                .ToTable("events", t =>
+                .ToTable(t =>
                 {
-                    t.HasCheckConstraint("CK_Event_Dates", "\"StartAt\" < \"EndAt\"");
-                    t.HasCheckConstraint("CK_Event_TotalSeats", "\"TotalSeats\" > 0");
-                    t.HasCheckConstraint("CK_Event_AvailableSeats", "\"AvailableSeats\" >= 0 AND \"AvailableSeats\" <= \"TotalSeats\"");
+                    t.HasCheckConstraint("CK_Event_Dates", "\"start_at\" < \"end_at\"");
+                    t.HasCheckConstraint("CK_Event_TotalSeats", "\"total_seats\" > 0");
+                    t.HasCheckConstraint("CK_Event_AvailableSeats", "\"available_seats\" >= 0 AND \"available_seats\" <= \"total_seats\"");
                 });
 
 
