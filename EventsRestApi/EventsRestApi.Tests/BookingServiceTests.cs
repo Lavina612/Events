@@ -12,7 +12,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 
@@ -21,7 +20,6 @@ namespace EventsRestApi.Tests
     public class BookingServiceTests : IDisposable
     {
         private readonly DateTimeOffset fixedTime = new DateTimeOffset(2026, 06, 01, 09, 01, 01, TimeSpan.Zero);
-        private readonly BookingBackgroundServiceSettings _settings;
         private readonly FakeTimeProvider _fakeTimeProvider;
         private readonly ServiceProvider _serviceProvider;
         private readonly ServiceCollection _services;
@@ -50,7 +48,6 @@ namespace EventsRestApi.Tests
                 configuration.GetSection(BookingBackgroundServiceSettings.SectionName));
 
             var serviceProvider = _services.BuildServiceProvider();
-            _settings = serviceProvider.GetRequiredService<IOptions<BookingBackgroundServiceSettings>>().Value;
 
             _fakeTimeProvider = new FakeTimeProvider();
             _fakeTimeProvider.SetUtcNow(fixedTime);
@@ -67,6 +64,8 @@ namespace EventsRestApi.Tests
             _context.Dispose();
             _serviceProvider.Dispose();
         }
+
+        #region GetBookingByIdAsync Tests
 
         [Fact]
         public async Task GetBookingByIdAsync_WithExistingId_ReturnBooking()
@@ -107,6 +106,10 @@ namespace EventsRestApi.Tests
 
             Assert.Equal(cts.Token, exception.CancellationToken);
         }
+
+        #endregion
+
+        #region CreateBookingAsync Tests
 
         [Fact]
         public async Task CreateBookingAsync_WithExistingValidEventWithEnoughAvailableSeats_ReturnCreatedBooking()
@@ -396,128 +399,7 @@ namespace EventsRestApi.Tests
             Assert.Equal(cts.Token, exception.CancellationToken);
         }
 
-        [Fact]
-        public async Task ProcessPendingBookingsBunchAsync_BookingsAndEventsAreCorrect_CheckConfirmedStatus()
-        {
-            /*---ARRANGE---*/
-            //Дата createdAt высчитывается относительно fixedTime: 2026.06.01 08:01:01
-            var createdAt = fixedTime.AddHours(-1).UtcDateTime;
-            var eventNumber = 1;
-            var @event = AddEventToDb(eventNumber, createdAt.AddDays(-1), createdAt.AddDays(1), 2);
-            var firstBooking = AddBookingToDb(1, eventNumber, 1, createdAt);
-            var secondBoking = AddBookingToDb(2, eventNumber, 1, createdAt);
-            var bunchCount = 1;
-
-            /*---ACT---*/
-            var bookingServiceTask = _bookingService.ProcessPendingBookingsBunchAsync(bunchCount, CancellationToken.None);
-
-            while (!bookingServiceTask.IsCompleted)
-            {
-                _fakeTimeProvider.Advance(TimeSpan.FromMilliseconds(_settings.DelayMilliseconds));
-            }
-
-            var result = await bookingServiceTask;
-
-            /*---ASSERT---*/
-            Assert.Equal(BookingStatus.Confirmed, firstBooking.Status);
-            Assert.NotNull(firstBooking.ProcessedAt);
-            Assert.True(firstBooking.ProcessedAt > firstBooking.CreatedAt);
-            Assert.Equal(BookingStatus.Pending, secondBoking.Status);
-            Assert.Null(secondBoking.ProcessedAt);
-            Assert.Equal(bunchCount, result);
-        }
-
-        [Fact]
-        public async Task ProcessPendingBookingsBunchAsync_EventDoesNotExistMore_CheckRejectedStatus()
-        {
-            /*---ARRANGE---*/
-            //Дата createdAt высчитывается относительно fixedTime: 2026.06.01 08:01:01
-            var createdAt = fixedTime.AddHours(-1).UtcDateTime;
-            var booking = AddBookingToDb(1, 0, 1, createdAt);
-
-            /*---ACT & ASSERT---*/
-            var bookingServiceTask = _bookingService.ProcessPendingBookingsBunchAsync(1, CancellationToken.None);
-
-            while (!bookingServiceTask.IsCompleted)
-            {
-                _fakeTimeProvider.Advance(TimeSpan.FromMilliseconds(_settings.DelayMilliseconds));
-            }
-
-            var result = await bookingServiceTask;
-
-            Assert.Equal(BookingStatus.Rejected, booking.Status);
-            Assert.NotNull(booking.ProcessedAt);
-            Assert.True(booking.ProcessedAt > booking.CreatedAt);
-        }
-
-        [Fact]
-        public async Task ProcessPendingBookingsBunchAsync_EventWasFinished_CheckRejectedStatus()
-        {
-            /*---ARRANGE---*/
-            //Дата createdAt высчитывается относительно fixedTime: 2026.06.01 08:01:01
-            var createdAt = fixedTime.AddHours(-1).UtcDateTime;
-            var eventAvailableSeatsBeforeBooking = 1;
-            var eventNumber = 1;
-            var @event = AddEventToDb(eventNumber, createdAt.AddDays(-2), createdAt.AddDays(-1), eventAvailableSeatsBeforeBooking);
-            var booking = AddBookingToDb(1, eventNumber, 1, createdAt);
-
-            /*---ACT & ASSERT---*/
-            @event.TryReserveSeats(booking.BookedSeats);
-
-            var bookingServiceTask = _bookingService.ProcessPendingBookingsBunchAsync(1, CancellationToken.None);
-
-            while (!bookingServiceTask.IsCompleted)
-            {
-                _fakeTimeProvider.Advance(TimeSpan.FromMilliseconds(_settings.DelayMilliseconds));
-            }
-
-            var result = await bookingServiceTask;
-
-            Assert.Equal(BookingStatus.Rejected, booking.Status);
-            Assert.NotNull(booking.ProcessedAt);
-            Assert.True(booking.ProcessedAt > booking.CreatedAt);
-            Assert.Equal(eventAvailableSeatsBeforeBooking, @event.AvailableSeats);
-        }
-
-        [Fact]
-        public async Task ProcessPendingBookingsBunchAsync_CancelBeforeStart_ThrowOperationCancelledException()
-        {
-            /*---ARRANGE---*/
-            using var cts = new CancellationTokenSource();
-            cts.Cancel();
-
-            /*---ACT & ASSERT---*/
-            var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
-                await _bookingService.ProcessPendingBookingsBunchAsync(0, cts.Token));
-
-            Assert.Equal(cts.Token, exception.CancellationToken);
-        }
-
-        [Fact]
-        public async Task ProcessPendingBookingsBunchAsync_CancelTaskWhenTaskDelay_ThrowOperationCancelledException()
-        {
-            /*---ARRANGE---*/
-            using var cts = new CancellationTokenSource();
-
-            //Дата createdAt высчитывается относительно fixedTime: 2026.06.01 08:01:01
-            var createdAt = fixedTime.AddHours(-1).UtcDateTime;
-            var eventNumber = 1;
-            var @event = AddEventToDb(1, createdAt.AddDays(-2), createdAt.AddDays(1), 2);
-            var firstBooking = AddBookingToDb(1, eventNumber, 1, createdAt);
-            var secondBooking = AddBookingToDb(2, eventNumber, 1, createdAt);
-
-            /*---ACT---*/
-            var bookingServiceTask = _bookingService.ProcessPendingBookingsBunchAsync(2, cts.Token);
-
-            cts.Cancel();
-
-            /*---ASSERT---*/
-            //Если забыли передать токен отмены в Task.Delay, то пусть свалится по тайм-ауту
-            var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
-                await bookingServiceTask.WaitAsync(TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken));
-
-            Assert.Equal(cts.Token, exception.CancellationToken);
-        }
+        #endregion
 
         private Event AddEventToDb(
             int number,

@@ -15,18 +15,14 @@ namespace EventsRestApi.Services
 
         private readonly TimeProvider _timeProvider;
 
-        private readonly ILogger<BookingService> _logger;
-
         public BookingService(
             IBookingRepository bookingRepository,
             IEventService eventService,
-            TimeProvider timeProvider,
-            ILogger<BookingService> logger)
+            TimeProvider timeProvider)
         {
             _bookingRepository = bookingRepository;
             _eventService = eventService;
             _timeProvider = timeProvider;
-            _logger = logger;
         }
 
         public async Task<Booking?> GetBookingByIdAsync(Guid bookingId, CancellationToken cancellationToken)
@@ -66,110 +62,6 @@ namespace EventsRestApi.Services
             }
 
             return addedBooking;
-        }
-
-        public async Task<int> ProcessPendingBookingsBunchAsync(int count, CancellationToken cancellationToken)
-        {
-            var pendingBookings = await _bookingRepository.GetByStatusAsync(BookingStatus.Pending, count, cancellationToken);
-
-            var tasks = pendingBookings.Select(booking => ProcessBookingAsync(booking, cancellationToken));
-
-            await Task.WhenAll(tasks);
-
-            return pendingBookings.Count;
-        }
-
-        private async Task ProcessBookingAsync(Booking booking, CancellationToken cancellationToken)
-        {
-            await Task.Delay(TimeSpan.FromSeconds(2), _timeProvider, cancellationToken);
-
-            Event? foundEvent = null;
-
-            await _semaphoreSlim.WaitAsync(cancellationToken);
-            try
-            {
-                foundEvent = await _eventService.GetByIdAsync(booking.EventId, cancellationToken);
-
-                if (foundEvent == null)
-                {
-                    booking.Reject(_timeProvider.GetUtcNow().UtcDateTime);
-                    await _bookingRepository.SaveContextAsync(cancellationToken);
-
-                    _logger.LogWarning(
-                        "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: события с Id: {EventId} не существует.",
-                        booking.ProcessedAt,
-                        booking.Id,
-                        booking.EventId);
-
-                    return;
-                }
-
-                if (!foundEvent.IsStillActual(_timeProvider.GetUtcNow().UtcDateTime))
-                {
-                    booking.Reject(_timeProvider.GetUtcNow().UtcDateTime);
-                    foundEvent.ReleaseSeats(booking.BookedSeats);
-                    await _bookingRepository.SaveContextAsync(cancellationToken);
-
-                    _logger.LogWarning(
-                        "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: события с Id: {EventId} уже завершилось. " +
-                        "Количество доступных мест обратно увеличено на {BookedSeats}",
-                        booking.ProcessedAt,
-                        booking.Id,
-                        booking.EventId,
-                        booking.BookedSeats);
-
-                    return;
-                }
-
-                booking.Confirm(_timeProvider.GetUtcNow().UtcDateTime);
-                await _bookingRepository.SaveContextAsync(cancellationToken);
-
-                _logger.LogInformation(
-                    "{ProcessedAt}: Бронирование с Id: {BookingId} обработано: {Status}.",
-                    booking.ProcessedAt,
-                    booking.Id,
-                    booking.Status);
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                _logger.LogInformation(
-                    "{ProcessedAt}: Обработка бронирования с Id: {BookingId} была отменена.",
-                    booking.ProcessedAt,
-                    booking.Id);
-
-                throw;
-            }
-            catch (Exception ex)
-            {
-                try
-                {
-                    if (foundEvent != null)
-                    {
-                        foundEvent.ReleaseSeats(booking.BookedSeats);
-                    }
-
-                    booking.Reject(_timeProvider.GetUtcNow().UtcDateTime);
-                    await _bookingRepository.SaveContextAsync(cancellationToken);
-
-                    _logger.LogError(
-                        ex,
-                        "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: неизвестная ошибка.",
-                        booking.ProcessedAt,
-                        booking.Id);
-                }
-                catch (Exception innerEx) 
-                {
-                    _logger.LogCritical(
-                        innerEx,
-                        "{ProcessedAt}: Не удалось отклонить бронирование с Id: {BookingId}: неизвестная ошибка.",
-                        booking.ProcessedAt,
-                        booking.Id);
-                }
-            }
-            finally
-            {
-                _semaphoreSlim.Release();
-            }
         }
     }
 }
