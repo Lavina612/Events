@@ -42,7 +42,7 @@ namespace EventsRestApi.Services
                 {
                     IReadOnlyList<Guid> pendingBookingIds;
 
-                    using (var scope = _scopeFactory.CreateScope()) 
+                    using (var scope = _scopeFactory.CreateScope())
                     {
                         var bookingRepository = scope.ServiceProvider.GetRequiredService<IBookingRepository>();
 
@@ -147,7 +147,7 @@ namespace EventsRestApi.Services
                     _logger.LogInformation(
                         "Обработка бронирования с Id: {BookingId} была отменена.",
                         bookingId);
-                } 
+                }
                 else
                 {
                     _logger.LogInformation(

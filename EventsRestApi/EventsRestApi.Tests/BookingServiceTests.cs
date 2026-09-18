@@ -318,7 +318,7 @@ namespace EventsRestApi.Tests
             var maxSimultaneousThreadsCount = 0;
             var semaphoreThreadsCountSetting = 1;
             var lockObject = new Lock();
-            var timeoutTask = Task.Delay(5000, TestContext.Current.CancellationToken);
+            var timeoutTask = Task.Delay(5000, CancellationToken.None);
 
             var tempProvider = _services.BuildServiceProvider();
             var eventService = tempProvider.GetRequiredService<IEventService>();
