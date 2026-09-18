@@ -8,7 +8,6 @@ using EventsRestApi.Services.Interfaces;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Moq;
 
 namespace EventsRestApi.Tests
 {
@@ -42,6 +41,8 @@ namespace EventsRestApi.Tests
             _context.Dispose();
             _serviceProvider.Dispose();
         }
+
+        #region GetPageAsync Tests
 
         [Fact]
         public async Task GetPageAsync_NoParamsWithMaxPageSize_ReturnAllEvents()
@@ -221,6 +222,10 @@ namespace EventsRestApi.Tests
             Assert.Equal(cts.Token, exception.CancellationToken);
         }
 
+        #endregion
+
+        #region GetByIdAsync Tests
+
         [Fact]
         public async Task GetByIdAsync_WithExistingId_ReturnEventById()
         {
@@ -262,8 +267,12 @@ namespace EventsRestApi.Tests
             Assert.Equal(cts.Token, exception.CancellationToken);
         }
 
+        #endregion
+
+        #region AddAsync Tests
+
         [Fact]
-        public async Task AddAsync_CorrectEventDto_EventIdWasGenerated()
+        public async Task AddAsync_CorrectEventDto_ReturnGeneratedEvent()
         {
             /*---ARRANGE---*/
             //Дата startAt высчитывается относительно fixedTime: 2026.06.06 09:06:00
@@ -301,6 +310,10 @@ namespace EventsRestApi.Tests
 
             Assert.Equal(cts.Token, exception.CancellationToken);
         }
+
+        #endregion
+
+        #region UpdateAsync Tests
 
         [Fact]
         public async Task UpdateAsync_WithExistingId_ReturnTrue()
@@ -364,6 +377,10 @@ namespace EventsRestApi.Tests
             Assert.Equal(cts.Token, exception.CancellationToken);
         }
 
+        #endregion
+
+        #region DeleteAsync Tests
+
         [Fact]
         public async Task DeleteAsync_WithExistingId_ReturnTrue()
         {
@@ -403,6 +420,8 @@ namespace EventsRestApi.Tests
 
             Assert.Equal(cts.Token, exception.CancellationToken);
         }
+
+        #endregion
 
         private void FillTestData()
         {

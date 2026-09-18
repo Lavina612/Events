@@ -13,10 +13,9 @@ namespace EventsRestApi.Data.Repositories
             _context = context;
         }
 
-        public async Task<IReadOnlyList<Event>> GetAllAsync(CancellationToken cancellationToken)
+        public IQueryable<Event> GetAllAsync()
         {
-            var events = await _context.Events.ToListAsync(cancellationToken);
-            return events.AsReadOnly();
+            return _context.Events.AsQueryable();
         }
 
         public async Task<Event?> GetByIdAsync(Guid id, CancellationToken cancellationToken)

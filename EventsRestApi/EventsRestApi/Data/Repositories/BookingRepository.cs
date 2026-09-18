@@ -29,15 +29,16 @@ namespace EventsRestApi.Data.Repositories
             return await _context.Bookings.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         }
 
-        public async Task<IReadOnlyList<Booking>> GetByStatusAsync(BookingStatus status, int count, CancellationToken cancellationToken)
+        public async Task<IReadOnlyList<Guid>> GetIdsByStatusAsync(BookingStatus status, int count, CancellationToken cancellationToken)
         {
-            var bookingsByStatus = await _context.Bookings
+            var bookingIdsByStatus = await _context.Bookings
                 .Where(x => x.Status == status)
                 .OrderBy(x => x.CreatedAt)
+                .Select(x => x.Id)
                 .Take(count)
                 .ToListAsync(cancellationToken);
 
-            return bookingsByStatus.AsReadOnly();
+            return bookingIdsByStatus.AsReadOnly();
         }
 
         public async Task<Booking> AddAsync(Guid eventId, int requestedSeats, CancellationToken cancellationToken)

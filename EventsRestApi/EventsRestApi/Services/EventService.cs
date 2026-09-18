@@ -2,6 +2,7 @@
 using EventsRestApi.Dto.Response;
 using EventsRestApi.Models;
 using EventsRestApi.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace EventsRestApi.Services
 {
@@ -16,35 +17,34 @@ namespace EventsRestApi.Services
 
         public async Task<PaginatedResult<Event>> GetPageAsync(string? title, DateTime? from, DateTime? to, int page, int pageSize, CancellationToken cancellationToken)
         {
-            var allEvents = await _eventRepository.GetAllAsync(cancellationToken);
-            var filteringEventsEnumerable = allEvents.AsEnumerable();
+            var query = _eventRepository.GetAllAsync();
 
             if (!string.IsNullOrWhiteSpace(title))
             {
-                filteringEventsEnumerable = filteringEventsEnumerable.Where(x => x.Title.Contains(title, StringComparison.CurrentCultureIgnoreCase));
+                query = query.Where(x => x.Title.Contains(title, StringComparison.CurrentCultureIgnoreCase));
             }
 
             if (from != null)
             {
-                filteringEventsEnumerable = filteringEventsEnumerable.Where(x => x.StartAt >= from);
+                query = query.Where(x => x.StartAt >= from);
             }
 
             if (to != null)
             {
-                filteringEventsEnumerable = filteringEventsEnumerable.Where(x => x.EndAt <= to);
+                query = query.Where(x => x.EndAt <= to);
             }
 
-            var allFilteredEvents = filteringEventsEnumerable.ToList();
+            var totalCount = await query.CountAsync(cancellationToken);
 
-            var filteredEventsForPage = allFilteredEvents
+            var filteredEventsForPage = await query
                 .OrderBy(x => x.StartAt)
                 .Skip(pageSize * (page - 1))
                 .Take(pageSize)
-                .ToList();
+                .ToListAsync();
 
             return new PaginatedResult<Event>(
                 filteredEventsForPage,
-                allFilteredEvents.Count,
+                totalCount,
                 page,
                 pageSize);
         }
