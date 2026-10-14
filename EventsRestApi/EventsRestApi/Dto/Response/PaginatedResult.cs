@@ -4,6 +4,8 @@
         List<T> ItemsForPage,
         int TotalCount,
         int Page,
-        int PageSize,
-        int TotalPages);
+        int PageSize)
+    {
+        public int TotalPages => (TotalCount + PageSize - 1) / PageSize;
+    }
 }
