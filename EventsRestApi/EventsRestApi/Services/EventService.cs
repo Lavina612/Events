@@ -17,7 +17,7 @@ namespace EventsRestApi.Services
 
         public async Task<PaginatedResult<Event>> GetPageAsync(string? title, DateTime? from, DateTime? to, int page, int pageSize, CancellationToken cancellationToken)
         {
-            var query = _eventRepository.GetAllAsync();
+            var query = _eventRepository.GetAll();
 
             if (!string.IsNullOrWhiteSpace(title))
             {
@@ -40,7 +40,7 @@ namespace EventsRestApi.Services
                 .OrderBy(x => x.StartAt)
                 .Skip(pageSize * (page - 1))
                 .Take(pageSize)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             return new PaginatedResult<Event>(
                 filteredEventsForPage,

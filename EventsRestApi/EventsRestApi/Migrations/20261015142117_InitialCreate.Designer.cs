@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EventsRestApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261015121359_InitialCreate")]
+    [Migration("20261015142117_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -60,9 +60,9 @@ namespace EventsRestApi.Migrations
 
                     b.ToTable("bookings", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Booking_BookedSeats", "\"booked_seats\" > 0");
+                            t.HasCheckConstraint("CK_Booking_BookedSeats", "booked_seats > 0");
 
-                            t.HasCheckConstraint("CK_Booking_Dates", "\"processed_at\" IS NULL OR \"created_at\" <= \"processed_at\"");
+                            t.HasCheckConstraint("CK_Booking_Dates", "processed_at IS NULL OR created_at <= processed_at");
                         });
                 });
 
@@ -104,11 +104,11 @@ namespace EventsRestApi.Migrations
 
                     b.ToTable("events", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Event_AvailableSeats", "\"available_seats\" >= 0 AND \"available_seats\" <= \"total_seats\"");
+                            t.HasCheckConstraint("CK_Event_AvailableSeats", "available_seats >= 0 AND available_seats <= total_seats");
 
-                            t.HasCheckConstraint("CK_Event_Dates", "\"start_at\" < \"end_at\"");
+                            t.HasCheckConstraint("CK_Event_Dates", "start_at < end_at");
 
-                            t.HasCheckConstraint("CK_Event_TotalSeats", "\"total_seats\" > 0");
+                            t.HasCheckConstraint("CK_Event_TotalSeats", "total_seats > 0");
                         });
                 });
 

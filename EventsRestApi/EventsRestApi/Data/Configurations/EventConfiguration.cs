@@ -11,9 +11,9 @@ namespace EventsRestApi.Data.Configurations
             builder
                 .ToTable(t =>
                 {
-                    t.HasCheckConstraint("CK_Event_Dates", "\"start_at\" < \"end_at\"");
-                    t.HasCheckConstraint("CK_Event_TotalSeats", "\"total_seats\" > 0");
-                    t.HasCheckConstraint("CK_Event_AvailableSeats", "\"available_seats\" >= 0 AND \"available_seats\" <= \"total_seats\"");
+                    t.HasCheckConstraint("CK_Event_Dates", "start_at < end_at");
+                    t.HasCheckConstraint("CK_Event_TotalSeats", "total_seats > 0");
+                    t.HasCheckConstraint("CK_Event_AvailableSeats", "available_seats >= 0 AND available_seats <= total_seats");
                 });
 
 

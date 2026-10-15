@@ -26,9 +26,9 @@ namespace EventsRestApi.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_events", x => x.id);
-                    table.CheckConstraint("CK_Event_AvailableSeats", "\"available_seats\" >= 0 AND \"available_seats\" <= \"total_seats\"");
-                    table.CheckConstraint("CK_Event_Dates", "\"start_at\" < \"end_at\"");
-                    table.CheckConstraint("CK_Event_TotalSeats", "\"total_seats\" > 0");
+                    table.CheckConstraint("CK_Event_AvailableSeats", "available_seats >= 0 AND available_seats <= total_seats");
+                    table.CheckConstraint("CK_Event_Dates", "start_at < end_at");
+                    table.CheckConstraint("CK_Event_TotalSeats", "total_seats > 0");
                 });
 
             migrationBuilder.CreateTable(
@@ -45,8 +45,8 @@ namespace EventsRestApi.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_bookings", x => x.id);
-                    table.CheckConstraint("CK_Booking_BookedSeats", "\"booked_seats\" > 0");
-                    table.CheckConstraint("CK_Booking_Dates", "\"processed_at\" IS NULL OR \"created_at\" <= \"processed_at\"");
+                    table.CheckConstraint("CK_Booking_BookedSeats", "booked_seats > 0");
+                    table.CheckConstraint("CK_Booking_Dates", "processed_at IS NULL OR created_at <= processed_at");
                     table.ForeignKey(
                         name: "fk_bookings_events_event_id",
                         column: x => x.event_id,

@@ -13,7 +13,7 @@ namespace EventsRestApi.Data.Repositories
             _context = context;
         }
 
-        public IQueryable<Event> GetAllAsync()
+        public IQueryable<Event> GetAll()
         {
             return _context.Events.AsQueryable();
         }

@@ -11,8 +11,8 @@ namespace EventsRestApi.Data.Configurations
             builder
                 .ToTable(b =>
                 {
-                    b.HasCheckConstraint("CK_Booking_BookedSeats", "\"booked_seats\" > 0");
-                    b.HasCheckConstraint("CK_Booking_Dates", "\"processed_at\" IS NULL OR \"created_at\" <= \"processed_at\"");
+                    b.HasCheckConstraint("CK_Booking_BookedSeats", "booked_seats > 0");
+                    b.HasCheckConstraint("CK_Booking_Dates", "processed_at IS NULL OR created_at <= processed_at");
                 });
 
             builder
