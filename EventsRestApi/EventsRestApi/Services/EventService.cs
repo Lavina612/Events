@@ -1,6 +1,8 @@
-﻿using EventsRestApi.Dto.Response;
-using EventsRestApi.Interfaces;
+﻿using EventsRestApi.Data.Repositories.Interfaces;
+using EventsRestApi.Dto.Response;
 using EventsRestApi.Models;
+using EventsRestApi.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace EventsRestApi.Services
 {
@@ -13,62 +15,58 @@ namespace EventsRestApi.Services
             _eventRepository = eventRepository;
         }
 
-        public PaginatedResult<Event> Get(string? title, DateTime? from, DateTime? to, int page, int pageSize)
+        public async Task<PaginatedResult<Event>> GetPageAsync(string? title, DateTime? from, DateTime? to, int page, int pageSize, CancellationToken cancellationToken)
         {
-            var filteredEventsEnumerable = _eventRepository.Get().AsEnumerable();
+            var query = _eventRepository.GetAll();
 
             if (!string.IsNullOrWhiteSpace(title))
             {
-                filteredEventsEnumerable = filteredEventsEnumerable.Where(x => x.Title.Contains(title, StringComparison.CurrentCultureIgnoreCase));
+                query = query.Where(x => EF.Functions.ILike(x.Title, $"%{title}%"));
             }
 
             if (from != null)
             {
-                filteredEventsEnumerable = filteredEventsEnumerable.Where(x => x.StartAt >= from);
+                query = query.Where(x => x.StartAt >= from);
             }
 
             if (to != null)
             {
-                filteredEventsEnumerable = filteredEventsEnumerable.Where(x => x.EndAt <= to);
+                query = query.Where(x => x.EndAt <= to);
             }
 
-            var filteredEvents = filteredEventsEnumerable.ToList();
+            var totalCount = await query.CountAsync(cancellationToken);
 
-            var totalFilteredEventsCount = filteredEvents.Count;
-            var totalPages = (totalFilteredEventsCount + pageSize - 1) / pageSize;
-
-            var filteredEventsForPage = filteredEvents
+            var filteredEventsForPage = await query
                 .OrderBy(x => x.StartAt)
                 .Skip(pageSize * (page - 1))
                 .Take(pageSize)
-                .ToList();
+                .ToListAsync(cancellationToken);
 
             return new PaginatedResult<Event>(
                 filteredEventsForPage,
-                totalFilteredEventsCount,
+                totalCount,
                 page,
-                pageSize,
-                totalPages);
+                pageSize);
         }
 
-        public Event? GetById(Guid id)
+        public async Task<Event?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
-            return _eventRepository.GetById(id);
+            return await _eventRepository.GetByIdAsync(id, cancellationToken);
         }
 
-        public Event Add(Event addingEvent)
+        public async Task<Event> AddAsync(Event addingEvent, CancellationToken cancellationToken)
         {
-            return _eventRepository.Add(addingEvent);
+            return await _eventRepository.AddAsync(addingEvent, cancellationToken);
         }
 
-        public bool Update(Event updatingEvent)
+        public async Task<bool> UpdateAsync(Event updatingEvent, CancellationToken cancellationToken)
         {
-            return _eventRepository.Update(updatingEvent);
+            return await _eventRepository.UpdateAsync(updatingEvent, cancellationToken);
         }
 
-        public bool Delete(Guid id)
+        public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
         {
-            return _eventRepository.Delete(id);
+            return await _eventRepository.DeleteAsync(id, cancellationToken);
         }
     }
 }
