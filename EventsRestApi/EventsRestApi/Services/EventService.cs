@@ -21,7 +21,7 @@ namespace EventsRestApi.Services
 
             if (!string.IsNullOrWhiteSpace(title))
             {
-                query = query.Where(x => x.Title.Contains(title, StringComparison.CurrentCultureIgnoreCase));
+                query = query.Where(x => EF.Functions.ILike(x.Title, $"%{title}%"));
             }
 
             if (from != null)
