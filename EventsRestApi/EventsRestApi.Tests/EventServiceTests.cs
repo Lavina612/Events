@@ -148,7 +148,7 @@ namespace EventsRestApi.Tests
                 updatingEvent.Id,
                 updatingEvent.Title + "New",
                 updatingEvent.Description + "New",
-                updatingEvent.StartAt.AddDays(1),
+                updatingEvent.StartAt.AddDays(-1),
                 updatingEvent.EndAt.AddDays(1),
                 updatingEvent.TotalSeats);
 

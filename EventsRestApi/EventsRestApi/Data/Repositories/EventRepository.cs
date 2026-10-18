@@ -59,8 +59,7 @@ namespace EventsRestApi.Data.Repositories
 
             updatingEvent.Title = newEvent.Title;
             updatingEvent.Description = newEvent.Description;
-            updatingEvent.StartAt = newEvent.StartAt;
-            updatingEvent.EndAt = newEvent.EndAt;
+            updatingEvent.SetDates(newEvent.StartAt, newEvent.EndAt);
 
             await _context.SaveChangesAsync(cancellationToken);
 

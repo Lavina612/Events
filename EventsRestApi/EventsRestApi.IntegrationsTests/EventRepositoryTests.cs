@@ -244,6 +244,59 @@ namespace EventsRestApi.IntegrationsTests
                 .Excluding(x => x.AvailableSeats));
         }
 
+        [Theory]
+        // Представим временнную прямую с двумя контрольными точками: ----[1]-----[2]---->
+        // Исходные даты сейчас совпадают с контрольными точками, т.е. StartAt = 1 = 01.06.26, EndAt = 2 = 06.06.26
+        // В параметрах будем передавать смещение для StartAt и EndAt относительно исходных дат
+        [InlineData(-10, -10)] // -S-E-[1]------[2]------>
+        [InlineData(-1, -1)]   // ---S-[1]----E-[2]------>
+        [InlineData(-1, 1)]    // ---S-[1]------[2]-E---->
+        [InlineData(0, -1)]    // -----[1]=S--E-[2]------>
+        [InlineData(0, 1)]     // -----[1]=S----[2]-E---->
+        [InlineData(1, -1)]    // -----[1]-S--E-[2]------>
+        [InlineData(1, 0)]     // -----[1]-S----[2]=E---->
+        [InlineData(1, 1)]     // -----[1]-S----[2]-E---->
+        [InlineData(10, 10)]   // -----[1]------[2]--S-E->
+        public async Task UpdateAsync_CheckDifferentDatesShift_ReturnTrueWithNoExceptions(int startOffsetDays, int endOffsetDays)
+        {
+            /*---ARRANGE---*/
+            await ResetDatabaseAsync();
+
+            var @event = new Event(
+                new Guid("E0000000-0000-0000-0000-000000000001"),
+                "Event 1",
+                "Description 1",
+                new DateTime(2026, 06, 01, 00, 00, 00, DateTimeKind.Utc),
+                new DateTime(2026, 06, 06, 00, 00, 00, DateTimeKind.Utc),
+                1);
+
+            await using var arrangeContext = CreateContext();
+            await arrangeContext.Events.AddAsync(@event);
+            await arrangeContext.SaveChangesAsync();
+
+            var updatingEvent = new Event(
+                @event.Id,
+                @event.Title,
+                @event.Description,
+                @event.StartAt.AddDays(startOffsetDays),
+                @event.EndAt.AddDays(endOffsetDays),
+                @event.TotalSeats);
+
+            /*---ACT---*/
+            await using var actContext = CreateContext();
+            var eventRepository = new EventRepository(actContext);
+            var result = await eventRepository.UpdateAsync(updatingEvent, CancellationToken.None);
+
+            /*---ASSERT---*/
+            await using var assertContext = CreateContext();
+            var updatedEvent = assertContext.Events.FirstOrDefault(x => x.Id == @event.Id);
+
+            Assert.True(result);
+            Assert.NotNull(updatedEvent);
+            Assert.Equal(updatingEvent.StartAt, updatedEvent.StartAt);
+            Assert.Equal(updatingEvent.EndAt, updatedEvent.EndAt);
+        }
+
         #endregion
 
         #region DeleteAsync Tests

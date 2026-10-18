@@ -63,13 +63,11 @@
             Id = id;
 
             ValidateTotalSeats(totalSeats);
-            ValidateDates(startAt, endAt, nameof(endAt));
+            SetDates(startAt, endAt);
 
             Title = title;
             Description = description;
 
-            _startAt = startAt;
-            _endAt = endAt;
             _totalSeats = totalSeats;
             _availableSeats = totalSeats;
         }
@@ -100,6 +98,14 @@
             }
 
             AvailableSeats += count;
+        }
+
+        public void SetDates(DateTime newStartAt, DateTime newEndAt)
+        {
+            ValidateDates(newStartAt, newEndAt, nameof(newEndAt));
+
+            _startAt = newStartAt;
+            _endAt = newEndAt;
         }
 
         private void ValidateDates(DateTime startAt, DateTime endAt, string paramName)
