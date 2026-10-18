@@ -1,6 +1,6 @@
 ﻿using EventsRestApi.Data.Repositories.Interfaces;
 using EventsRestApi.Exceptions;
-using EventsRestApi.Models;
+using EventsRestApi.Models.Entities;
 using EventsRestApi.Services.Interfaces;
 
 namespace EventsRestApi.Services

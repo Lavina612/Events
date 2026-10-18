@@ -1,5 +1,6 @@
 ﻿using EventsRestApi.Data.Repositories.Interfaces;
 using EventsRestApi.Models;
+using EventsRestApi.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventsRestApi.Data.Repositories
@@ -13,9 +14,40 @@ namespace EventsRestApi.Data.Repositories
             _context = context;
         }
 
-        public IQueryable<Event> GetAll()
+        public async Task<PaginatedResult<Event>> GetPageAsync(string? title, DateTime? from, DateTime? to, int page, int pageSize, CancellationToken cancellationToken)
         {
-            return _context.Events.AsQueryable();
+            var query = _context.Events.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                query = query.Where(x => EF.Functions.ILike(x.Title, $"%{title}%"));
+            }
+
+            if (from != null)
+            {
+                var utcFrom = from.Value.ToUniversalTime();
+                query = query.Where(x => x.StartAt >= utcFrom);
+            }
+
+            if (to != null)
+            {
+                var utcTo = to.Value.ToUniversalTime();
+                query = query.Where(x => x.EndAt <= utcTo);
+            }
+
+            var totalCount = await query.CountAsync(cancellationToken);
+
+            var filteredEventsForPage = await query
+                .OrderBy(x => x.StartAt)
+                .Skip(pageSize * (page - 1))
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+
+            return new PaginatedResult<Event>(
+                filteredEventsForPage,
+                totalCount,
+                page,
+                pageSize);
         }
 
         public async Task<Event?> GetByIdAsync(Guid id, CancellationToken cancellationToken)

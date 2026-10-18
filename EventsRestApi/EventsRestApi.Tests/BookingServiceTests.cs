@@ -2,7 +2,7 @@
 using EventsRestApi.Data.Repositories;
 using EventsRestApi.Data.Repositories.Interfaces;
 using EventsRestApi.Exceptions;
-using EventsRestApi.Models;
+using EventsRestApi.Models.Entities;
 using EventsRestApi.Services;
 using EventsRestApi.Services.Interfaces;
 using EventsRestApi.Settings;

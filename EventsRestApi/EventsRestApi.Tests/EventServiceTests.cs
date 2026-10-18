@@ -2,6 +2,7 @@
 using EventsRestApi.Data.Repositories;
 using EventsRestApi.Data.Repositories.Interfaces;
 using EventsRestApi.Models;
+using EventsRestApi.Models.Entities;
 using EventsRestApi.Services;
 using EventsRestApi.Services.Interfaces;
 using FluentAssertions;
@@ -43,7 +44,52 @@ namespace EventsRestApi.Tests
 
         #region GetPageAsync Tests
 
-        //Метод EventService.GetPageAsync полностью проверяется на реальной PostgreSQL DB в EventsRestApi.IntegrationsTests/EventServiceTests.cs
+        [Fact]
+        public async Task GetPageAsync_NoParamsWithBigPageSize_ReturnAllEvents()
+        {
+            /*---ARRANGE---*/
+            var page = 1;
+            var pageSize = 100;
+            List<Event> expectedEvents = allEvents.OrderBy(x => x.StartAt).ToList();
+
+            var expected = new PaginatedResult<Event>(
+                expectedEvents,
+                expectedEvents.Count,
+                page,
+                pageSize);
+
+            /*---ACT---*/
+            var result = await _eventService.GetPageAsync(null, null, null, page, pageSize, CancellationToken.None);
+
+            /*---ASSERT---*/
+            Assert.Equal(expected.ItemsForPage.Select(x => x.Id), result.ItemsForPage.Select(x => x.Id));
+            Assert.Equivalent(expected, result, true);
+        }
+
+        [Fact]
+        public async Task GetPageAsync_NoEvents_ReturnEmptyPage()
+        {
+            /*---ARRANGE---*/
+            var page = 1;
+            var pageSize = 10;
+
+            _context.Events.RemoveRange(_context.Events);
+            await _context.SaveChangesAsync();
+
+            List<Event> expectedEvents = [];
+
+            var expected = new PaginatedResult<Event>(
+                expectedEvents,
+                expectedEvents.Count,
+                page,
+                pageSize);
+
+            /*---ACT---*/
+            var result = await _eventService.GetPageAsync(null, null, null, page, pageSize, CancellationToken.None);
+
+            /*---ASSERT---*/
+            Assert.Equivalent(expected, result, true);
+        }
 
         #endregion
 

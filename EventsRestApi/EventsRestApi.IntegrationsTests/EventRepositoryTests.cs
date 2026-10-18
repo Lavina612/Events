@@ -1,65 +1,235 @@
 ﻿using EventsRestApi.Data.Repositories;
 using EventsRestApi.Models;
+using EventsRestApi.Models.Entities;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 
 namespace EventsRestApi.IntegrationsTests
 {
     public class EventRepositoryTests : BaseDbTest
     {
-        public EventRepositoryTests(DbFixture fixture) : base(fixture) { }
+        private readonly DateTimeOffset fixedTime = new DateTimeOffset(2026, 06, 05, 09, 05, 05, TimeSpan.Zero);
+        private readonly List<Event> allEvents = [];
 
-        #region GetAll Tests
+        public EventRepositoryTests(DbFixture fixture) : base(fixture)
+        {
+            FillAllEventsField();
+        }
+
+        #region GetPageAsync Tests
 
         [Fact]
-        public async Task GetAll_TwoEventsInDb_ReturnAllEvents()
+        public async Task GetPageAsync_NoParamsWithBigPageSize_ReturnAllEvents()
         {
             /*---ARRANGE---*/
             await ResetDatabaseAsync();
+            await AddAllEventsToDb();
 
-            var event1 = new Event(
-                new Guid("E0000000-0000-0000-0000-000000000001"),
-                "Event 1",
-                "Description 1",
-                new DateTime(2026, 06, 01, 00, 00, 00, DateTimeKind.Utc),
-                new DateTime(2026, 06, 06, 00, 00, 00, DateTimeKind.Utc),
-                1);
+            var page = 1;
+            var pageSize = 100;
+            List<Event> expectedEvents = allEvents.OrderBy(x => x.StartAt).ToList();
 
-            var event2 = new Event(
-                new Guid("E0000000-0000-0000-0000-000000000002"),
-                "Event 2",
-                "Description 2",
-                new DateTime(2026, 06, 02, 00, 00, 00, DateTimeKind.Utc),
-                new DateTime(2026, 06, 07, 00, 00, 00, DateTimeKind.Utc),
-                2);
-
-            await using var arrangeContext = CreateContext();
-            await arrangeContext.Events.AddRangeAsync(event1, event2);
-            await arrangeContext.SaveChangesAsync();
+            var expected = new PaginatedResult<Event>(
+                expectedEvents,
+                expectedEvents.Count,
+                page,
+                pageSize);
 
             /*---ACT---*/
             await using var actContext = CreateContext();
             var eventRepository = new EventRepository(actContext);
-            var result = await eventRepository.GetAll().ToListAsync();
+            var result = await eventRepository.GetPageAsync(null, null, null, page, pageSize, CancellationToken.None);
 
             /*---ASSERT---*/
-            Assert.Equal(2, result.Count);
-            result.Should().BeEquivalentTo([event1, event2]);
+            Assert.Equal(expected.ItemsForPage.Select(x => x.Id), result.ItemsForPage.Select(x => x.Id));
+            Assert.Equivalent(expected, result, true);
         }
 
         [Fact]
-        public async Task GetAll_NoEventsInDb_ReturnEmptyCollection()
+        public async Task GetPageAsync_WithTitleParam_ReturnFilteredByTitleIgnoreCase()
         {
             /*---ARRANGE---*/
             await ResetDatabaseAsync();
+            await AddAllEventsToDb();
+
+            var titleParam = allEvents[0].Title.Substring(2).ToUpper();
+            var page = 1;
+            var pageSize = 100;
+            List<Event> expectedEvents = [allEvents[0]];
+
+            var expected = new PaginatedResult<Event>(
+                expectedEvents,
+                expectedEvents.Count,
+                page,
+                pageSize);
 
             /*---ACT---*/
             await using var actContext = CreateContext();
             var eventRepository = new EventRepository(actContext);
-            var result = await eventRepository.GetAll().ToListAsync();
+            var result = await eventRepository.GetPageAsync(titleParam, null, null, page, pageSize, CancellationToken.None);
 
             /*---ASSERT---*/
-            Assert.Empty(result);
+            Assert.Equivalent(expected, result, true);
+        }
+
+        [Fact]
+        public async Task GetPageAsync_WithStartAtAndEndAtParams_ReturnFilteredBetweenDates()
+        {
+            /*---ARRANGE---*/
+            await ResetDatabaseAsync();
+            await AddAllEventsToDb();
+
+            var page = 1;
+            var pageSize = 100;
+
+            //Дата startAt высчитывается относительно fixedTime: 2026.06.03 09:03:00
+            var startAt = fixedTime.AddDays(-2).AddMinutes(-2).AddSeconds(-5).UtcDateTime;
+            var endAt = startAt.AddDays(6).AddMinutes(4).AddSeconds(4);
+
+            List<Event> expectedEvents = allEvents[2..4].OrderBy(x => x.StartAt).ToList();
+
+            var expected = new PaginatedResult<Event>(
+                expectedEvents,
+                expectedEvents.Count,
+                page,
+                pageSize);
+
+            /*---ACT---*/
+            await using var actContext = CreateContext();
+            var eventRepository = new EventRepository(actContext);
+            var result = await eventRepository.GetPageAsync(null, startAt, endAt, page, pageSize, CancellationToken.None);
+
+            /*---ASSERT---*/
+            Assert.Equal(expected.ItemsForPage.Select(x => x.Id), result.ItemsForPage.Select(x => x.Id));
+            Assert.Equivalent(expected, result, true);
+        }
+
+        [Fact]
+        public async Task GetPageAsync_WithTitleAndStartAtAndEndAtParams_ReturnFilteredByTitleAndBetweenDates()
+        {
+            /*---ARRANGE---*/
+            await ResetDatabaseAsync();
+            await AddAllEventsToDb();
+
+            var page = 1;
+            var pageSize = 100;
+
+            //Дата startAt высчитывается относительно fixedTime: 2026.06.03 09:03:00
+            var startAt = fixedTime.AddDays(-2).AddMinutes(-2).AddSeconds(-5).UtcDateTime;
+            var endAt = startAt.AddDays(6).AddMinutes(4).AddSeconds(4);
+
+            List<Event> expectedEvents = [allEvents[2]];
+
+            var expected = new PaginatedResult<Event>(
+                expectedEvents,
+                expectedEvents.Count,
+                page,
+                pageSize);
+
+            /*---ACT---*/
+            await using var actContext = CreateContext();
+            var eventRepository = new EventRepository(actContext);
+            var result = await eventRepository.GetPageAsync("3", startAt, endAt, page, pageSize, CancellationToken.None);
+
+            /*---ASSERT---*/
+            Assert.Equivalent(expected, result, true);
+        }
+
+        [Fact]
+        public async Task GetPageAsync_WithPageAndPageSize_ReturnEventsForPage()
+        {
+            /*---ARRANGE---*/
+            await ResetDatabaseAsync();
+            await AddAllEventsToDb();
+
+            var page = 2;
+            var pageSize = 2;
+            List<Event> expectedEvents = allEvents.OrderBy(x => x.StartAt).Skip(2).Take(2).ToList();
+
+            var expected = new PaginatedResult<Event>(
+                expectedEvents,
+                allEvents.Count,
+                page,
+                pageSize);
+
+            /*---ACT---*/
+            await using var actContext = CreateContext();
+            var eventRepository = new EventRepository(actContext);
+            var result = await eventRepository.GetPageAsync(null, null, null, page, pageSize, CancellationToken.None);
+
+            /*---ASSERT---*/
+            Assert.Equal(expected.ItemsForPage.Select(x => x.Id), result.ItemsForPage.Select(x => x.Id));
+            Assert.Equivalent(expected, result, true);
+        }
+
+        [Fact]
+        public async Task GetPageAsync_NoEvents_ReturnEmptyPage()
+        {
+            /*---ARRANGE---*/
+            await ResetDatabaseAsync();
+
+            var page = 1;
+            var pageSize = 10;
+            List<Event> expectedEvents = [];
+
+            var expected = new PaginatedResult<Event>(
+                expectedEvents,
+                expectedEvents.Count,
+                page,
+                pageSize);
+
+            /*---ACT---*/
+            await using var actContext = CreateContext();
+            var eventRepository = new EventRepository(actContext);
+            var result = await eventRepository.GetPageAsync(null, null, null, page, pageSize, CancellationToken.None);
+
+            /*---ASSERT---*/
+            Assert.Equivalent(expected, result, true);
+        }
+
+        [Fact]
+        public async Task GetPageAsync_WithPageMoreThanTotalPages_ReturnEmptyPage()
+        {
+            /*---ARRANGE---*/
+            await ResetDatabaseAsync();
+            await AddAllEventsToDb();
+
+            var page = 10;
+            var pageSize = 10;
+            List<Event> expectedEvents = [];
+
+            var expected = new PaginatedResult<Event>(
+                expectedEvents,
+                allEvents.Count,
+                page,
+                pageSize);
+
+            /*---ACT---*/
+            await using var actContext = CreateContext();
+            var eventRepository = new EventRepository(actContext);
+            var result = await eventRepository.GetPageAsync(null, null, null, page, pageSize, CancellationToken.None);
+
+            /*---ASSERT---*/
+            Assert.Equivalent(expected, result, true);
+        }
+
+        [Fact]
+        public async Task GetPageAsync_CancelBeforeStart_ThrowOperationCancelledException()
+        {
+            /*---ARRANGE---*/
+            await ResetDatabaseAsync();
+            await AddAllEventsToDb();
+
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            /*---ACT & ASSERT---*/
+            await using var actContext = CreateContext();
+            var eventRepository = new EventRepository(actContext);
+
+            var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+                await eventRepository.GetPageAsync(string.Empty, default(DateTime), default(DateTime), 1, 100, cts.Token));
+
+            Assert.Equal(cts.Token, exception.CancellationToken);
         }
 
         #endregion
@@ -381,5 +551,35 @@ namespace EventsRestApi.IntegrationsTests
         }
 
         #endregion
+
+        private void FillAllEventsField()
+        {
+            var title = "Event";
+            var description = "Description";
+            var eventCount = 5;
+
+            for (int i = 1; i <= eventCount; i++)
+            {
+                //Дата startAt высчитывается относительно fixedTime: 2026.06.01-05 09:01-05:01-05
+                var startAt = fixedTime.AddDays(i - eventCount).AddMinutes(i - eventCount).AddSeconds(i - eventCount).UtcDateTime;
+
+                var currentEvent = new Event(
+                    new Guid($"E0000000-0000-0000-0000-00000000000{i}"),
+                    $"{title} {i}",
+                    $"{description} {i}",
+                    startAt,
+                    startAt.AddDays(eventCount),
+                    i);
+
+                allEvents.Add(currentEvent);
+            }
+        }
+
+        private async Task AddAllEventsToDb()
+        {
+            await using var arrangeContext = CreateContext();
+            await arrangeContext.Events.AddRangeAsync(allEvents);
+            await arrangeContext.SaveChangesAsync();
+        }
     }
 }

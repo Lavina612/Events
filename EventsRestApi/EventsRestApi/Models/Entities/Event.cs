@@ -1,4 +1,4 @@
-﻿namespace EventsRestApi.Models
+﻿namespace EventsRestApi.Models.Entities
 {
     public class Event
     {

@@ -1,5 +1,5 @@
 ﻿using EventsRestApi.Data.Repositories.Interfaces;
-using EventsRestApi.Models;
+using EventsRestApi.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventsRestApi.Data.Repositories

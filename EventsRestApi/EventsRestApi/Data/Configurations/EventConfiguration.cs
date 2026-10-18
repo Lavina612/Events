@@ -1,4 +1,4 @@
-﻿using EventsRestApi.Models;
+﻿using EventsRestApi.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

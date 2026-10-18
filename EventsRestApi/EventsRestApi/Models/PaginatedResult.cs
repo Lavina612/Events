@@ -1,4 +1,4 @@
-﻿namespace EventsRestApi.Dto.Response
+﻿namespace EventsRestApi.Models
 {
     public record PaginatedResult<T>(
         List<T> ItemsForPage,

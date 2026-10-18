@@ -1,5 +1,5 @@
-﻿using EventsRestApi.Dto.Response;
-using EventsRestApi.Models;
+﻿using EventsRestApi.Models;
+using EventsRestApi.Models.Entities;
 
 namespace EventsRestApi.Services.Interfaces
 {

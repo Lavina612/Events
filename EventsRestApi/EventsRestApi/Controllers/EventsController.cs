@@ -1,6 +1,7 @@
 ﻿using EventsRestApi.Dto.Request;
 using EventsRestApi.Dto.Response;
 using EventsRestApi.Mappers;
+using EventsRestApi.Models;
 using EventsRestApi.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
