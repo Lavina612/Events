@@ -1,11 +1,13 @@
-﻿namespace EventsRestApi.Models
+﻿namespace EventsRestApi.Models.Entities
 {
     public class Event
     {
         private DateTime _startAt;
         private DateTime _endAt;
+        private int _totalSeats;
+        private int _availableSeats;
 
-        public Guid Id { get; init; }
+        public Guid Id { get; private set; }
 
         public string Title { get; set; }
 
@@ -31,9 +33,24 @@
             }
         }
 
-        public int TotalSeats { get; init; }
+        public int TotalSeats
+        {
+            get => _totalSeats;
+        }
 
-        public int AvailableSeats { get; private set; }
+        public int AvailableSeats
+        {
+            get => _availableSeats;
+            private set
+            {
+                ValidateAvailableSeats(value, _totalSeats);
+                _availableSeats = value;
+            }
+        }
+
+        public List<Booking> Bookings { get; private set; } = null!;
+
+        private Event() { Title = null!; }
 
         public Event(
             Guid id,
@@ -45,21 +62,14 @@
         {
             Id = id;
 
-            if (totalSeats <= 0)
-            {
-                throw new ArgumentException(
-                    $"Событие с Id: {Id}: Количество мест на мероприятии должно быть положительным.",
-                    nameof(TotalSeats));
-            }
-
-            ValidateDates(startAt, endAt, nameof(endAt));
+            ValidateTotalSeats(totalSeats);
+            SetDates(startAt, endAt);
 
             Title = title;
             Description = description;
-            _startAt = startAt;
-            _endAt = endAt;
-            TotalSeats = totalSeats;
-            AvailableSeats = totalSeats;
+
+            _totalSeats = totalSeats;
+            _availableSeats = totalSeats;
         }
 
         public bool IsStillActual(DateTime currentUtcNow)
@@ -90,6 +100,14 @@
             AvailableSeats += count;
         }
 
+        public void SetDates(DateTime newStartAt, DateTime newEndAt)
+        {
+            ValidateDates(newStartAt, newEndAt, nameof(newEndAt));
+
+            _startAt = newStartAt;
+            _endAt = newEndAt;
+        }
+
         private void ValidateDates(DateTime startAt, DateTime endAt, string paramName)
         {
             if (endAt <= startAt)
@@ -97,6 +115,33 @@
                 throw new ArgumentException(
                     $"Событие с Id: {Id}: Дата окончания мероприятия должна быть позже даты начала мероприятия.",
                     paramName);
+            }
+        }
+
+        private void ValidateTotalSeats(int totalSeats)
+        {
+            if (totalSeats <= 0)
+            {
+                throw new ArgumentException(
+                    $"Событие с Id: {Id}: Количество мест на мероприятии должно быть положительным.",
+                    nameof(TotalSeats));
+            }
+        }
+
+        private void ValidateAvailableSeats(int availableSeats, int totalSeats)
+        {
+            if (availableSeats < 0)
+            {
+                throw new ArgumentException(
+                    $"Событие с Id: {Id}: Количество доступных мест на мероприятии должно быть неотрицательным.",
+                    nameof(AvailableSeats));
+            }
+
+            if (availableSeats > totalSeats)
+            {
+                throw new ArgumentException(
+                    $"Событие с Id: {Id}: Количество доступных мест на мероприятии не может быть больше общего количества мест.",
+                    nameof(AvailableSeats));
             }
         }
     }

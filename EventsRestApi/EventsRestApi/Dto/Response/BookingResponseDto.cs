@@ -1,4 +1,4 @@
-﻿using EventsRestApi.Models;
+﻿using EventsRestApi.Models.Entities;
 
 namespace EventsRestApi.Dto.Response
 {

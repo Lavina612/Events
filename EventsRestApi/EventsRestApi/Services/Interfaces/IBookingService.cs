@@ -1,13 +1,11 @@
-﻿using EventsRestApi.Models;
+﻿using EventsRestApi.Models.Entities;
 
-namespace EventsRestApi.Interfaces
+namespace EventsRestApi.Services.Interfaces
 {
     public interface IBookingService
     {
         Task<Booking?> GetBookingByIdAsync(Guid bookingId, CancellationToken cancellationToken);
 
         Task<Booking> CreateBookingAsync(Guid eventId, int requestedSeats, CancellationToken cancellationToken);
-
-        Task<int> ProcessPendingBookingsBunchAsync(int count, CancellationToken cancellationToken);
     }
 }

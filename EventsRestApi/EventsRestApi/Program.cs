@@ -1,8 +1,11 @@
-using EventsRestApi.Interfaces;
+using EventsRestApi.Data;
+using EventsRestApi.Data.Repositories;
+using EventsRestApi.Data.Repositories.Interfaces;
 using EventsRestApi.Middlewares;
-using EventsRestApi.Repositories;
 using EventsRestApi.Services;
+using EventsRestApi.Services.Interfaces;
 using EventsRestApi.Settings;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,17 +16,29 @@ builder.Services.AddControllers().AddJsonOptions(x =>
 builder.Services.Configure<BookingBackgroundServiceSettings>(
     builder.Configuration.GetSection(BookingBackgroundServiceSettings.SectionName));
 
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options
+        .UseNpgsql(builder.Configuration.GetConnectionString("Default"))
+        .UseSnakeCaseNamingConvention());
+
 builder.Services.AddHostedService<BookingBackgroundService>();
 
-builder.Services.AddSingleton<IEventService, EventService>();
-builder.Services.AddSingleton<IBookingService, BookingService>();
-builder.Services.AddSingleton<IEventRepository, EventRepository>();
-builder.Services.AddSingleton<IBookingRepository, BookingRepository>();
+builder.Services.AddScoped<IEventService, EventService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<IBookingRepository, BookingRepository>();
+
 builder.Services.AddSingleton(TimeProvider.System);
 
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+}
 
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
