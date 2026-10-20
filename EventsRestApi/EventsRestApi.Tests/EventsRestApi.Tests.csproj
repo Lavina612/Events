@@ -14,6 +14,7 @@
     </PackageReference>
     <PackageReference Include="FluentAssertions" Version="8.11.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.13" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.11.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageReference Include="Moq" Version="4.21.0" />
@@ -25,10 +26,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EventsRestApi\EventsRestApi.Presentation.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
 
@@ -37,5 +34,11 @@
       <Link>appsettings.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EventsRestApi.Application\EventsRestApi.Application.csproj" />
+    <ProjectReference Include="..\EventsRestApi.Infrastructure\EventsRestApi.Infrastructure.csproj" />
+    <ProjectReference Include="..\EventsRestApi.Presentation\EventsRestApi.Presentation.csproj" />
   </ItemGroup>
 </Project>
