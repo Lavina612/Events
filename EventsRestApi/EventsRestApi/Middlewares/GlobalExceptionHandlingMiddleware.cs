@@ -1,4 +1,5 @@
-﻿using EventsRestApi.Presentation.Exceptions;
+﻿using EventsRestApi.Domain.Exceptions;
+using EventsRestApi.Presentation.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EventsRestApi.Presentation.Middlewares

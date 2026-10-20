@@ -1,6 +1,6 @@
-﻿using EventsRestApi.Presentation.Dto.Request;
+﻿using EventsRestApi.Domain.Models.Entities;
+using EventsRestApi.Presentation.Dto.Request;
 using EventsRestApi.Presentation.Dto.Response;
-using EventsRestApi.Presentation.Models.Entities;
 
 namespace EventsRestApi.Presentation.Mappers
 {

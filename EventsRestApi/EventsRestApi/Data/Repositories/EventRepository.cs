@@ -1,7 +1,7 @@
-﻿using EventsRestApi.Presentation.Data;
+﻿using EventsRestApi.Domain.Models;
+using EventsRestApi.Domain.Models.Entities;
+using EventsRestApi.Presentation.Data;
 using EventsRestApi.Presentation.Data.Repositories.Interfaces;
-using EventsRestApi.Presentation.Models;
-using EventsRestApi.Presentation.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventsRestApi.Presentation.Data.Repositories

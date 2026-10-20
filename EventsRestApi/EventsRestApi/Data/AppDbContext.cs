@@ -1,4 +1,4 @@
-﻿using EventsRestApi.Presentation.Models.Entities;
+﻿using EventsRestApi.Domain.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventsRestApi.Presentation.Data

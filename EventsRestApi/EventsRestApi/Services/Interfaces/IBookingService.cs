@@ -1,4 +1,4 @@
-﻿using EventsRestApi.Presentation.Models.Entities;
+﻿using EventsRestApi.Domain.Models.Entities;
 
 namespace EventsRestApi.Presentation.Services.Interfaces
 {

@@ -1,8 +1,8 @@
-﻿using EventsRestApi.Presentation.Data;
+﻿using EventsRestApi.Domain.Models.Entities;
+using EventsRestApi.Presentation.Data;
 using EventsRestApi.Presentation.Data.Repositories;
 using EventsRestApi.Presentation.Data.Repositories.Interfaces;
 using EventsRestApi.Presentation.Models;
-using EventsRestApi.Presentation.Models.Entities;
 using EventsRestApi.Presentation.Services;
 using EventsRestApi.Presentation.Services.Interfaces;
 using FluentAssertions;

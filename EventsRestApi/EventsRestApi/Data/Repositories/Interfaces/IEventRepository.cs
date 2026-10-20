@@ -1,5 +1,5 @@
-﻿using EventsRestApi.Presentation.Models;
-using EventsRestApi.Presentation.Models.Entities;
+﻿using EventsRestApi.Domain.Models;
+using EventsRestApi.Domain.Models.Entities;
 
 namespace EventsRestApi.Presentation.Data.Repositories.Interfaces
 {

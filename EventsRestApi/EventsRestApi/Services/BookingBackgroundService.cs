@@ -1,5 +1,5 @@
-﻿using EventsRestApi.Presentation.Data.Repositories.Interfaces;
-using EventsRestApi.Presentation.Models.Entities;
+﻿using EventsRestApi.Domain.Models.Entities;
+using EventsRestApi.Presentation.Data.Repositories.Interfaces;
 using EventsRestApi.Presentation.Services.Interfaces;
 using EventsRestApi.Presentation.Settings;
 using Microsoft.Extensions.Options;
