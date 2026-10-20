@@ -1,7 +1,7 @@
 ﻿using EventsRestApi.Domain.Models;
 using EventsRestApi.Domain.Models.Entities;
 
-namespace EventsRestApi.Presentation.Data.Repositories.Interfaces
+namespace EventsRestApi.Application.RepositoryInterfaces
 {
     public interface IEventRepository
     {

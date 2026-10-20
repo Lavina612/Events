@@ -1,9 +1,10 @@
-﻿using EventsRestApi.Domain.Models.Entities;
-using EventsRestApi.Presentation.Data.Repositories.Interfaces;
-using EventsRestApi.Presentation.Exceptions;
-using EventsRestApi.Presentation.Services.Interfaces;
+﻿using EventsRestApi.Application.Exceptions;
+using EventsRestApi.Application.RepositoryInterfaces;
+using EventsRestApi.Application.Services.Interfaces;
+using EventsRestApi.Domain.Exceptions;
+using EventsRestApi.Domain.Models.Entities;
 
-namespace EventsRestApi.Presentation.Services
+namespace EventsRestApi.Application.Services
 {
     public class BookingService : IBookingService
     {

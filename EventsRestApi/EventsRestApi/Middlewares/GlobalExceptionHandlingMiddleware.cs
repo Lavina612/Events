@@ -1,5 +1,5 @@
-﻿using EventsRestApi.Domain.Exceptions;
-using EventsRestApi.Presentation.Exceptions;
+﻿using EventsRestApi.Application.Exceptions;
+using EventsRestApi.Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EventsRestApi.Presentation.Middlewares
@@ -73,11 +73,6 @@ namespace EventsRestApi.Presentation.Middlewares
 
             switch (ex)
             {
-                case AppValidationException ave:
-                    error.Status = StatusCodes.Status400BadRequest;
-                    error.Extensions["errors"] = ave.Errors;
-                    break;
-
                 case NotFoundEventException nfee:
                     error.Status = StatusCodes.Status404NotFound;
                     error.Extensions["eventId"] = nfee.EventId;

@@ -1,10 +1,10 @@
+using EventsRestApi.Application.RepositoryInterfaces;
+using EventsRestApi.Application.Services;
+using EventsRestApi.Application.Services.Interfaces;
+using EventsRestApi.Application.Settings;
 using EventsRestApi.Presentation.Data;
 using EventsRestApi.Presentation.Data.Repositories;
-using EventsRestApi.Presentation.Data.Repositories.Interfaces;
 using EventsRestApi.Presentation.Middlewares;
-using EventsRestApi.Presentation.Services;
-using EventsRestApi.Presentation.Services.Interfaces;
-using EventsRestApi.Presentation.Settings;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 

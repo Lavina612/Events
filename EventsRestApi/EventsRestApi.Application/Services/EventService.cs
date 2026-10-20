@@ -1,9 +1,9 @@
-﻿using EventsRestApi.Domain.Models;
+﻿using EventsRestApi.Application.RepositoryInterfaces;
+using EventsRestApi.Application.Services.Interfaces;
+using EventsRestApi.Domain.Models;
 using EventsRestApi.Domain.Models.Entities;
-using EventsRestApi.Presentation.Data.Repositories.Interfaces;
-using EventsRestApi.Presentation.Services.Interfaces;
 
-namespace EventsRestApi.Presentation.Services
+namespace EventsRestApi.Application.Services
 {
     public class EventService : IEventService
     {

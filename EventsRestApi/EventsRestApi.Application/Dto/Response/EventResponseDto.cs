@@ -1,4 +1,4 @@
-﻿namespace EventsRestApi.Presentation.Dto.Response
+﻿namespace EventsRestApi.Application.Dto.Response
 {
     public record EventResponseDto(
         Guid Id,

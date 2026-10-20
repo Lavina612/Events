@@ -1,4 +1,4 @@
-﻿namespace EventsRestApi.Presentation.Exceptions
+﻿namespace EventsRestApi.Application.Exceptions
 {
     public class NotFoundEventException : Exception
     {

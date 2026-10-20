@@ -1,8 +1,8 @@
-﻿using EventsRestApi.Domain.Models;
-using EventsRestApi.Presentation.Dto.Request;
-using EventsRestApi.Presentation.Dto.Response;
-using EventsRestApi.Presentation.Mappers;
-using EventsRestApi.Presentation.Services.Interfaces;
+﻿using EventsRestApi.Application.Dto.Request;
+using EventsRestApi.Application.Dto.Response;
+using EventsRestApi.Application.Mappers;
+using EventsRestApi.Application.Services.Interfaces;
+using EventsRestApi.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
