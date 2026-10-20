@@ -1,4 +1,4 @@
-﻿namespace EventsRestApi.Settings
+﻿namespace EventsRestApi.Presentation.Settings
 {
     public class BookingBackgroundServiceSettings
     {

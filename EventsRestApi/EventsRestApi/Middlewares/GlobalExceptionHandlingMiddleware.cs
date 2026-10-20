@@ -1,7 +1,7 @@
-﻿using EventsRestApi.Exceptions;
+﻿using EventsRestApi.Presentation.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
-namespace EventsRestApi.Middlewares
+namespace EventsRestApi.Presentation.Middlewares
 {
     public class GlobalExceptionHandlingMiddleware
     {

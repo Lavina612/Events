@@ -1,7 +1,7 @@
-﻿using EventsRestApi.Models;
-using EventsRestApi.Models.Entities;
+﻿using EventsRestApi.Presentation.Models;
+using EventsRestApi.Presentation.Models.Entities;
 
-namespace EventsRestApi.Services.Interfaces
+namespace EventsRestApi.Presentation.Services.Interfaces
 {
     public interface IEventService
     {

@@ -1,10 +1,10 @@
-﻿using EventsRestApi.Data.Repositories.Interfaces;
-using EventsRestApi.Models.Entities;
-using EventsRestApi.Services.Interfaces;
-using EventsRestApi.Settings;
+﻿using EventsRestApi.Presentation.Data.Repositories.Interfaces;
+using EventsRestApi.Presentation.Models.Entities;
+using EventsRestApi.Presentation.Services.Interfaces;
+using EventsRestApi.Presentation.Settings;
 using Microsoft.Extensions.Options;
 
-namespace EventsRestApi.Services
+namespace EventsRestApi.Presentation.Services
 {
     public class BookingBackgroundService : BackgroundService
     {

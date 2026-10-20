@@ -1,8 +1,8 @@
-﻿using EventsRestApi.Dto.Request;
-using EventsRestApi.Dto.Response;
-using EventsRestApi.Models.Entities;
+﻿using EventsRestApi.Presentation.Dto.Request;
+using EventsRestApi.Presentation.Dto.Response;
+using EventsRestApi.Presentation.Models.Entities;
 
-namespace EventsRestApi.Mappers
+namespace EventsRestApi.Presentation.Mappers
 {
     public static class Mapper
     {

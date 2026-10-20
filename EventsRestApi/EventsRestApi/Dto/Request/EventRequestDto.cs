@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace EventsRestApi.Dto.Request
+namespace EventsRestApi.Presentation.Dto.Request
 {
     public record EventRequestDto(
         [Required(ErrorMessage = "Название мероприятия обязательно для заполнения.")] string Title,

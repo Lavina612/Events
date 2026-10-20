@@ -1,4 +1,4 @@
-﻿namespace EventsRestApi.Models.Entities
+﻿namespace EventsRestApi.Presentation.Models.Entities
 {
     public class Booking
     {

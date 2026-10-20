@@ -1,6 +1,6 @@
-﻿using EventsRestApi.Models.Entities;
+﻿using EventsRestApi.Presentation.Models.Entities;
 
-namespace EventsRestApi.Dto.Response
+namespace EventsRestApi.Presentation.Dto.Response
 {
     public record BookingResponseDto(
         Guid Id,

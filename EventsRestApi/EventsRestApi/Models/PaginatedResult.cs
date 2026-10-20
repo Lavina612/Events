@@ -1,4 +1,4 @@
-﻿namespace EventsRestApi.Models
+﻿namespace EventsRestApi.Presentation.Models
 {
     public record PaginatedResult<T>(
         List<T> ItemsForPage,

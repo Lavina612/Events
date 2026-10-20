@@ -1,4 +1,4 @@
-﻿namespace EventsRestApi.Exceptions
+﻿namespace EventsRestApi.Presentation.Exceptions
 {
     public class NoAvailableSeatsException : Exception
     {

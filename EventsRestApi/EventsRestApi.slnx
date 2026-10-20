@@ -1,5 +1,8 @@
 <Solution>
+  <Project Path="EventsRestApi.Application/EventsRestApi.Application.csproj" Id="14e4cfef-16d7-428a-8bda-2b4f41f66d87" />
+  <Project Path="EventsRestApi.Domain/EventsRestApi.Domain.csproj" Id="527d7100-1606-4477-8716-a6b70083f23f" />
+  <Project Path="EventsRestApi.Infrastructure/EventsRestApi.Infrastructure.csproj" Id="b11f35a9-8676-407f-a5ac-83e82f33f54b" />
   <Project Path="EventsRestApi.IntegrationsTests/EventsRestApi.IntegrationsTests.csproj" Id="6e5eb24b-2ad1-4bd6-bc20-aec8f3f33c75" />
   <Project Path="EventsRestApi.Tests/EventsRestApi.Tests.csproj" Id="36cb6ea1-f91b-40f5-b3e2-bd2c5050ab2b" />
-  <Project Path="EventsRestApi/EventsRestApi.csproj" />
+  <Project Path="EventsRestApi/EventsRestApi.Presentation.csproj" />
 </Solution>

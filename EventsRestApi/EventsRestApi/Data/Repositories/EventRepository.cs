@@ -1,9 +1,10 @@
-﻿using EventsRestApi.Data.Repositories.Interfaces;
-using EventsRestApi.Models;
-using EventsRestApi.Models.Entities;
+﻿using EventsRestApi.Presentation.Data;
+using EventsRestApi.Presentation.Data.Repositories.Interfaces;
+using EventsRestApi.Presentation.Models;
+using EventsRestApi.Presentation.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace EventsRestApi.Data.Repositories
+namespace EventsRestApi.Presentation.Data.Repositories
 {
     public class EventRepository : IEventRepository
     {

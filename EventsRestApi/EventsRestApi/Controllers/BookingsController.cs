@@ -1,9 +1,9 @@
-﻿using EventsRestApi.Dto.Response;
-using EventsRestApi.Mappers;
-using EventsRestApi.Services.Interfaces;
+﻿using EventsRestApi.Presentation.Dto.Response;
+using EventsRestApi.Presentation.Mappers;
+using EventsRestApi.Presentation.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
-namespace EventsRestApi.Controllers
+namespace EventsRestApi.Presentation.Controllers
 {
     [ApiController]
     [Route("[controller]")]

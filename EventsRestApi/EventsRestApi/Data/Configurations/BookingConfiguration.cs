@@ -1,8 +1,8 @@
-﻿using EventsRestApi.Models.Entities;
+﻿using EventsRestApi.Presentation.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace EventsRestApi.Data.Configurations
+namespace EventsRestApi.Presentation.Data.Configurations
 {
     public class BookingConfiguration : IEntityTypeConfiguration<Booking>
     {
