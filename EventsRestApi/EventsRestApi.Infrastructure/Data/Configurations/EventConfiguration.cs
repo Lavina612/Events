@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace EventsRestApi.Presentation.Data.Configurations
+namespace EventsRestApi.Infrastructure.Data.Configurations
 {
     public class EventConfiguration : IEntityTypeConfiguration<Event>
     {

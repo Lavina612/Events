@@ -1,5 +1,5 @@
 ﻿using EventsRestApi.Domain.Models.Entities;
-using EventsRestApi.Presentation.Data.Repositories;
+using EventsRestApi.Infrastructure.Data.Repositories;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;

@@ -1,4 +1,4 @@
-﻿using EventsRestApi.Presentation.Data;
+﻿using EventsRestApi.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
 

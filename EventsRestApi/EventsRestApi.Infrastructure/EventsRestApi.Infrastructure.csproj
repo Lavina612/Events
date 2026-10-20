@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.13" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\EventsRestApi.Application\EventsRestApi.Application.csproj" />
     <ProjectReference Include="..\EventsRestApi.Domain\EventsRestApi.Domain.csproj" />
   </ItemGroup>

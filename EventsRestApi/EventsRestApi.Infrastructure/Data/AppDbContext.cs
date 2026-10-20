@@ -1,7 +1,7 @@
 ﻿using EventsRestApi.Domain.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace EventsRestApi.Presentation.Data
+namespace EventsRestApi.Infrastructure.Data
 {
     public class AppDbContext : DbContext
     {
