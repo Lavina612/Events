@@ -1,6 +1,6 @@
-﻿using EventsRestApi.Data.Repositories;
-using EventsRestApi.Models;
-using EventsRestApi.Models.Entities;
+﻿using EventsRestApi.Domain.Models;
+using EventsRestApi.Domain.Models.Entities;
+using EventsRestApi.Infrastructure.Data.Repositories;
 using FluentAssertions;
 
 namespace EventsRestApi.IntegrationsTests

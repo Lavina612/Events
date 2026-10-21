@@ -1,4 +1,4 @@
-﻿using EventsRestApi.Data;
+﻿using EventsRestApi.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventsRestApi.IntegrationsTests

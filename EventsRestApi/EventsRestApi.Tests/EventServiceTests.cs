@@ -1,10 +1,10 @@
-﻿using EventsRestApi.Data;
-using EventsRestApi.Data.Repositories;
-using EventsRestApi.Data.Repositories.Interfaces;
-using EventsRestApi.Models;
-using EventsRestApi.Models.Entities;
-using EventsRestApi.Services;
-using EventsRestApi.Services.Interfaces;
+﻿using EventsRestApi.Application.RepositoryInterfaces;
+using EventsRestApi.Application.Services;
+using EventsRestApi.Application.Services.Interfaces;
+using EventsRestApi.Domain.Models;
+using EventsRestApi.Domain.Models.Entities;
+using EventsRestApi.Infrastructure.Data;
+using EventsRestApi.Infrastructure.Data.Repositories;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
