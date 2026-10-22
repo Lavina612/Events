@@ -10,6 +10,8 @@
 
         public UserRole Role { get; set; }
 
+        public List<Booking> Bookings { get; private set; }
+
         public User() { }
 
         public User(

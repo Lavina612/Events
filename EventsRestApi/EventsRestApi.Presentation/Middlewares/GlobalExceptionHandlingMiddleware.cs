@@ -73,9 +73,10 @@ namespace EventsRestApi.Presentation.Middlewares
 
             switch (ex)
             {
-                case NotFoundEventException nfee:
+                case BaseNotFoundException bnfe:
                     error.Status = StatusCodes.Status404NotFound;
-                    error.Extensions["eventId"] = nfee.EventId;
+                    error.Extensions["Id"] = bnfe.Id;
+                    error.Extensions["resourceType"] = bnfe.ResourceName;
                     break;
 
                 case NoAvailableSeatsException nase:

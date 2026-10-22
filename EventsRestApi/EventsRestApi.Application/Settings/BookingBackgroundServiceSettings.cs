@@ -2,7 +2,7 @@
 {
     public class BookingBackgroundServiceSettings
     {
-        public const string SectionName = "BookingBackgroundService";
+        public const string SectionName = "BookingBackgroundServiceSettings";
 
         public int BunchCount { get; set; } = 5;
 

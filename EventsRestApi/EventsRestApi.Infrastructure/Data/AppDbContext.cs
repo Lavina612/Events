@@ -9,6 +9,8 @@ namespace EventsRestApi.Infrastructure.Data
 
         public DbSet<Booking> Bookings => Set<Booking>();
 
+        public DbSet<User> Users => Set<User>();
+
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

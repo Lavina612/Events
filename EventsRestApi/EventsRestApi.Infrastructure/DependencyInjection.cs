@@ -23,6 +23,7 @@ namespace EventsRestApi.Infrastructure
 
             services.AddScoped<IEventRepository, EventRepository>();
             services.AddScoped<IBookingRepository, BookingRepository>();
+            services.AddScoped<IUserRepository, UserRepository>();
 
             services.AddScoped<ITokenService, TokenService>();
 

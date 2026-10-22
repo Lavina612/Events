@@ -10,14 +10,15 @@ namespace EventsRestApi.Application
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.Configure<BookingBackgroundServiceSettings>(
-                configuration.GetSection(BookingBackgroundServiceSettings.SectionName));
+            services.Configure<BookingBackgroundServiceSettings>(configuration.GetSection(BookingBackgroundServiceSettings.SectionName));
+            services.Configure<UserSettings>(configuration.GetSection(UserSettings.SectionName));
 
             services.AddHostedService<BookingBackgroundService>();
 
             services.AddScoped<IEventService, EventService>();
             services.AddScoped<IBookingService, BookingService>();
             services.AddScoped<IPasswordService, PasswordService>();
+            services.AddScoped<IUserService, UserService>();
 
             services.AddSingleton(TimeProvider.System);
 
