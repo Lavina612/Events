@@ -8,6 +8,10 @@
 
         public Event Event { get; private set; }
 
+        public Guid UserId { get; private set; }
+
+        public User User { get; private set; }
+
         public BookingStatus Status { get; private set; }
 
         public int BookedSeats { get; private set; }
@@ -21,6 +25,7 @@
         public Booking(
             Guid id,
             Guid eventId,
+            Guid userId,
             BookingStatus status,
             int bookedSeats,
             DateTime createdAt)
@@ -34,6 +39,7 @@
                     nameof(BookedSeats));
             }
 
+            UserId = userId;
             EventId = eventId;
             Status = status;
             BookedSeats = bookedSeats;
@@ -48,6 +54,11 @@
         public void Reject(DateTime currentUtcNow)
         {
             ChangeStatus(BookingStatus.Rejected, currentUtcNow);
+        }
+
+        public void Cancel(DateTime currentUtcNow)
+        {
+            ChangeStatus(BookingStatus.Cancelled, currentUtcNow);
         }
 
         public void ChangeStatus(BookingStatus status, DateTime? currentUtcNow)

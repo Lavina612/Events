@@ -7,7 +7,7 @@
         public DateTime EndAt { get; }
 
         public FinishedEventException(Guid eventId, DateTime endAt)
-            : base($"Событие с Id = {eventId} уже завершилось. Дата завершениея: {endAt}.")
+            : base($"Событие с Id = {eventId} уже завершилось. Дата завершения: {endAt}.")
         {
             EventId = eventId;
             EndAt = endAt;

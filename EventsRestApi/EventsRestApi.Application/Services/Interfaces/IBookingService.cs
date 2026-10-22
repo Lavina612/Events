@@ -6,6 +6,6 @@ namespace EventsRestApi.Application.Services.Interfaces
     {
         Task<Booking?> GetBookingByIdAsync(Guid bookingId, CancellationToken cancellationToken);
 
-        Task<Booking> CreateBookingAsync(Guid eventId, int requestedSeats, CancellationToken cancellationToken);
+        Task<Booking> CreateBookingAsync(Guid eventId, Guid userId, int requestedSeats, CancellationToken cancellationToken);
     }
 }

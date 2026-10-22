@@ -31,7 +31,7 @@ namespace EventsRestApi.Application.Services
             return await _bookingRepository.GetByIdAsync(bookingId, cancellationToken);
         }
 
-        public async Task<Booking> CreateBookingAsync(Guid eventId, int requestedSeats, CancellationToken cancellationToken)
+        public async Task<Booking> CreateBookingAsync(Guid eventId, Guid userId, int requestedSeats, CancellationToken cancellationToken)
         {
             Booking? addedBooking = null;
 
@@ -55,7 +55,7 @@ namespace EventsRestApi.Application.Services
                     throw new NoAvailableSeatsException(eventId, requestedSeats, foundEvent.AvailableSeats);
                 }
 
-                addedBooking = await _bookingRepository.AddAsync(eventId, requestedSeats, cancellationToken);
+                addedBooking = await _bookingRepository.AddAsync(eventId, userId, requestedSeats, cancellationToken);
             }
             finally
             {

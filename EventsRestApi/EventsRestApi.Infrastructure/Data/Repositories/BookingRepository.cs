@@ -1,6 +1,5 @@
 ﻿using EventsRestApi.Application.RepositoryInterfaces;
 using EventsRestApi.Domain.Models.Entities;
-using EventsRestApi.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventsRestApi.Infrastructure.Data.Repositories
@@ -42,11 +41,12 @@ namespace EventsRestApi.Infrastructure.Data.Repositories
             return bookingIdsByStatus.AsReadOnly();
         }
 
-        public async Task<Booking> AddAsync(Guid eventId, int requestedSeats, CancellationToken cancellationToken)
+        public async Task<Booking> AddAsync(Guid eventId, Guid userId, int requestedSeats, CancellationToken cancellationToken)
         {
             var addingBooking = new Booking(
                 Guid.NewGuid(),
                 eventId,
+                userId,
                 BookingStatus.Pending,
                 requestedSeats,
                 _timeProvider.GetUtcNow().UtcDateTime);
