@@ -17,6 +17,7 @@ namespace EventsRestApi.Application
 
             services.AddScoped<IEventService, EventService>();
             services.AddScoped<IBookingService, BookingService>();
+            services.AddScoped<IPasswordService, PasswordService>();
 
             services.AddSingleton(TimeProvider.System);
 

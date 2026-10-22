@@ -1,4 +1,4 @@
-﻿using EventsRestApi.Application.RepositoryInterfaces;
+﻿using EventsRestApi.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Application.Services.Interfaces;
 using EventsRestApi.Domain.Models;
 using EventsRestApi.Domain.Models.Entities;

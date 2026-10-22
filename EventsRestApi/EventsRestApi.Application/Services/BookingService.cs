@@ -1,5 +1,5 @@
 ﻿using EventsRestApi.Application.Exceptions;
-using EventsRestApi.Application.RepositoryInterfaces;
+using EventsRestApi.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Application.Services.Interfaces;
 using EventsRestApi.Domain.Exceptions;
 using EventsRestApi.Domain.Models.Entities;

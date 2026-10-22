@@ -1,6 +1,6 @@
 ﻿using EventsRestApi.Domain.Models.Entities;
 
-namespace EventsRestApi.Application.RepositoryInterfaces
+namespace EventsRestApi.Application.InterfacesForInfrastructure.Repositories
 {
     public interface IBookingRepository
     {
