@@ -19,11 +19,14 @@ namespace EventsRestApi.Application.Services
             return Convert.ToHexString(bytes);
         }
 
-        public bool VerifyPassword(string password, string hashedPassword)
+        public void VerifyPassword(string password, string hashedPassword)
         {
             var verifyingHashedPassword = HashPassword(password);
 
-            return string.Equals(verifyingHashedPassword, hashedPassword, StringComparison.OrdinalIgnoreCase);
+            if (!string.Equals(verifyingHashedPassword, hashedPassword, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedAccessException("Неверный логин или пароль.");
+            }
         }
     }
 }
