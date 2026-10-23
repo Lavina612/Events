@@ -7,10 +7,11 @@ using EventsRestApi.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace EventsRestApi.Infrastructure
 {
-    public static class DependencyInjection
+    public static class InfrastructureExtensions
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
@@ -28,6 +29,15 @@ namespace EventsRestApi.Infrastructure
             services.AddScoped<ITokenService, TokenService>();
 
             return services;
+        }
+
+        public static async Task ApplyMigrationsAsync(this IHost host)
+        {
+            using (var scope = host.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                await db.Database.MigrateAsync();
+            }
         }
     }
 }
