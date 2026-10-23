@@ -6,7 +6,7 @@
 
         public string Login { get; set; }
 
-        public string HashPassword { get; set; }
+        public string HashedPassword { get; set; }
 
         public UserRole Role { get; set; }
 
@@ -22,7 +22,7 @@
         {
             Id = id;
             Login = login;
-            HashPassword = hashPassword;
+            HashedPassword = hashPassword;
             Role = role;
         }
     }

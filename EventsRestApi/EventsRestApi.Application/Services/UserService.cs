@@ -1,4 +1,5 @@
 ﻿using EventsRestApi.Application.Dto.Request;
+using EventsRestApi.Application.Exceptions;
 using EventsRestApi.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Application.InterfacesForInfrastructure.Services;
 using EventsRestApi.Application.Services.Interfaces;
@@ -30,23 +31,28 @@ namespace EventsRestApi.Application.Services
             _userSettings = userSettings.Value;
         }
 
+        public async Task<User?> GetById(Guid id, CancellationToken cancellationToken)
+        {
+            return await _userRepository.GetByIdAsync(id, cancellationToken);
+        }
+
         public async Task<bool> CanMakeBooking(Guid userId, CancellationToken cancellationToken)
         {
             return await _userRepository.GetBookingsCountAsync(userId, cancellationToken) < _userSettings.ActiveBookingLimit;
         }
 
-        public async Task<User> Register(UserCredentialsDto userCredentialsDto, CancellationToken cancellationToken)
+        public async Task<User> Register(UserCredentialsDto userCredentialsDto, UserRole role, CancellationToken cancellationToken)
         {
             var foundUser = await _userRepository.GetByLoginAsync(userCredentialsDto.Login, cancellationToken);
 
             if (foundUser != null)
             {
-                throw new InvalidOperationException($"Пользователь с логином {userCredentialsDto.Login} уже существует.");
+                throw new UserAlreadyExistsException(userCredentialsDto.Login);
             }
 
             var hashedPassword = _passwordService.HashPassword(userCredentialsDto.Password);
 
-            return await _userRepository.AddAsync(userCredentialsDto.Login, hashedPassword, cancellationToken);
+            return await _userRepository.AddAsync(userCredentialsDto.Login, hashedPassword, role, cancellationToken);
         }
 
         public async Task<string> LogIn(UserCredentialsDto userCredentialsDto, CancellationToken cancellationToken)
@@ -58,7 +64,7 @@ namespace EventsRestApi.Application.Services
                 throw new UnauthorizedAccessException("Неверный логин или пароль.");
             }
 
-            _passwordService.VerifyPassword(userCredentialsDto.Password, user.HashPassword);
+            _passwordService.VerifyPassword(userCredentialsDto.Password, user.HashedPassword);
 
             return _tokenService.GenerateToken(user.Id, user.Login, user.Role);
         }

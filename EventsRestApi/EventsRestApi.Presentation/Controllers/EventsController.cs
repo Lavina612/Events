@@ -3,18 +3,36 @@ using EventsRestApi.Application.Dto.Response;
 using EventsRestApi.Application.Mappers;
 using EventsRestApi.Application.Services.Interfaces;
 using EventsRestApi.Domain.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 
 namespace EventsRestApi.Presentation.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [Authorize]
     public class EventsController : ControllerBase
     {
         private readonly IEventService _eventService;
 
         private readonly IBookingService _bookingService;
+
+        private Guid CurrentUserId
+        {
+            get
+            {
+                var claimValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(claimValue) || !Guid.TryParse(claimValue, out var userId))
+                {
+                    throw new UnauthorizedAccessException("Идентификатор пользователя не найден в токене.");
+                }
+
+                return userId;
+            }
+        }
 
         public EventsController(
             IEventService eventService,
@@ -25,6 +43,7 @@ namespace EventsRestApi.Presentation.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         [ProducesResponseType(typeof(PaginatedResult<EventResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PaginatedResult<EventResponseDto>>> GetAll(
@@ -37,14 +56,15 @@ namespace EventsRestApi.Presentation.Controllers
         {
             var resultWithEvents = await _eventService.GetPageAsync(title, from, to, page, pageSize, cancellationToken);
 
-            return new PaginatedResult<EventResponseDto>(
+            return Ok(new PaginatedResult<EventResponseDto>(
                 resultWithEvents.ItemsForPage.Select(Mapper.MapToEventResponseDto).ToList(),
                 resultWithEvents.TotalCount,
                 resultWithEvents.Page,
-                resultWithEvents.PageSize);
+                resultWithEvents.PageSize));
         }
 
         [HttpGet("{id:guid}")]
+        [AllowAnonymous]
         [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
@@ -59,14 +79,16 @@ namespace EventsRestApi.Presentation.Controllers
                     statusCode: StatusCodes.Status404NotFound);
             }
 
-            return Mapper.MapToEventResponseDto(foundEvent);
+            return Ok(Mapper.MapToEventResponseDto(foundEvent));
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status201Created)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Add(EventRequestDto addingEventDto, CancellationToken cancellationToken = default)
+        public async Task<ActionResult<EventResponseDto>> Add(EventRequestDto addingEventDto, CancellationToken cancellationToken = default)
         {
             var addedEvent = await _eventService.AddAsync(Mapper.MapToEvent(addingEventDto), cancellationToken);
 
@@ -74,8 +96,11 @@ namespace EventsRestApi.Presentation.Controllers
         }
 
         [HttpPut("{id:guid}")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Update(Guid id, EventRequestDto updatingEventDto, CancellationToken cancellationToken = default)
@@ -93,7 +118,10 @@ namespace EventsRestApi.Presentation.Controllers
         }
 
         [HttpDelete("{id:guid}")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken = default)
@@ -112,21 +140,19 @@ namespace EventsRestApi.Presentation.Controllers
 
         [HttpPost("{eventId:guid}/book")]
         [ProducesResponseType(StatusCodes.Status202Accepted)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<BookingResponseDto>> CreateBooking(
             Guid eventId,
             [FromQuery][Range(1, int.MaxValue, ErrorMessage = "Количество бронируемых мест должно быть положительным.")] int requestedSeats,
             CancellationToken cancellationToken = default)
         {
-            //заглушка
-            var userId = Guid.Empty;
+            var createdBooking = await _bookingService.CreateBookingAsync(eventId, CurrentUserId, requestedSeats, cancellationToken);
 
-            var createdBooking = await _bookingService.CreateBookingAsync(eventId, userId, requestedSeats, cancellationToken);
-
-            return AcceptedAtAction(
+            return CreatedAtAction(
                 actionName: "GetById",
                 controllerName: "Bookings",
                 routeValues: new { id = createdBooking.Id },

@@ -1,4 +1,4 @@
-﻿namespace EventsRestApi.Domain.Exceptions
+﻿namespace EventsRestApi.Application.Exceptions
 {
     public class ForbiddenException : Exception
     {

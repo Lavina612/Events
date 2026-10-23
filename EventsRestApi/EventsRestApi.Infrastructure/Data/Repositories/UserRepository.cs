@@ -12,19 +12,24 @@ namespace EventsRestApi.Infrastructure.Data.Repositories
         {
             _context = context;
         }
-        
+
+        public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+        {
+            return await _context.Users.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        }
+
         public async Task<User?> GetByLoginAsync(string login, CancellationToken cancellationToken)
         {
             return await _context.Users.FirstOrDefaultAsync(x =>  x.Login == login, cancellationToken);
         }
 
-        public async Task<User> AddAsync(string login, string hashPassword, CancellationToken cancellationToken)
+        public async Task<User> AddAsync(string login, string hashedPassword, UserRole role, CancellationToken cancellationToken)
         {
             var user = new User(
                 Guid.NewGuid(),
                 login,
-                hashPassword,
-                UserRole.User);
+                hashedPassword,
+                role);
 
             await _context.Users.AddAsync(user, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);

@@ -64,32 +64,63 @@ namespace EventsRestApi.Presentation.Middlewares
             await httpContext.Response.WriteAsJsonAsync(error);
         }
 
-        private ProblemDetails CreateProblemDetails(Exception ex)
+        private ProblemDetails CreateProblemDetails(Exception exception)
         {
             var error = new ProblemDetails
             {
-                Detail = ex.Message
+                Detail = exception.Message
             };
 
-            switch (ex)
+            switch (exception)
             {
-                case BaseNotFoundException bnfe:
+                case ArgumentException ex:
+                    error.Status = StatusCodes.Status400BadRequest;
+                    error.Extensions["paramName"] = ex.ParamName;
+                    break;
+
+                case FinishedEventException ex:
+                    error.Status = StatusCodes.Status400BadRequest;
+                    error.Extensions["eventId"] = ex.EventId;
+                    error.Extensions["endAt"] = ex.EventEndAt;
+                    break;
+
+                case StartedEventException ex:
+                    error.Status = StatusCodes.Status400BadRequest;
+                    error.Extensions["eventId"] = ex.EventId;
+                    error.Extensions["startAt"] = ex.EventStartAt;
+                    break;
+
+                case UnauthorizedAccessException ex:
+                    error.Status = StatusCodes.Status401Unauthorized;
+                    break;
+
+                case ForbiddenException ex:
+                    error.Status = StatusCodes.Status403Forbidden;
+                    error.Extensions["userId"] = ex.UserId;
+                    break;
+
+                case BaseNotFoundException ex:
                     error.Status = StatusCodes.Status404NotFound;
-                    error.Extensions["Id"] = bnfe.Id;
-                    error.Extensions["resourceType"] = bnfe.ResourceName;
+                    error.Extensions["Id"] = ex.Id;
+                    error.Extensions["resourceType"] = ex.ResourceName;
                     break;
 
-                case NoAvailableSeatsException nase:
+                case NoAvailableSeatsException ex:
                     error.Status = StatusCodes.Status409Conflict;
-                    error.Extensions["eventId"] = nase.EventId;
-                    error.Extensions["requestedSeats"] = nase.RequestedSeats;
-                    error.Extensions["availableSeats"] = nase.AvailableSeats;
+                    error.Extensions["eventId"] = ex.EventId;
+                    error.Extensions["requestedSeats"] = ex.RequestedSeats;
+                    error.Extensions["availableSeats"] = ex.AvailableSeats;
                     break;
 
-                case FinishedEventException fee:
-                    error.Status = StatusCodes.Status422UnprocessableEntity;
-                    error.Extensions["eventId"] = fee.EventId;
-                    error.Extensions["endAt"] = fee.EndAt;
+                case ExceedingActiveBookingLimitException ex:
+                    error.Status = StatusCodes.Status409Conflict;
+                    error.Extensions["userId"] = ex.UserId;
+                    error.Extensions["bookingLimit"] = ex.BookingLimit;
+                    break;
+
+                case UserAlreadyExistsException ex:
+                    error.Status = StatusCodes.Status409Conflict;
+                    error.Extensions["login"] = ex.Login;
                     break;
 
                 default:

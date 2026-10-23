@@ -24,6 +24,12 @@ namespace EventsRestApi.Infrastructure.Data.Repositories
             return bookings.AsReadOnly();
         }
 
+        public async Task<IReadOnlyList<Booking>> GetAllByUserId(Guid userId, CancellationToken cancellationToken)
+        {
+            var bookings = await _context.Bookings.Where(x => x.UserId == userId).ToListAsync(cancellationToken);
+            return bookings.AsReadOnly();
+        }
+
         public async Task<Booking?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             return await _context.Bookings.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);

@@ -36,9 +36,23 @@ namespace EventsRestApi.Application.Services
             _userSettings = userSettings.Value;
         }
 
-        public async Task<Booking?> GetBookingByIdAsync(Guid bookingId, CancellationToken cancellationToken)
+        public async Task<IReadOnlyList<Booking>> GetAllByUserId(Guid userId, CancellationToken cancellationToken)
         {
-            return await _bookingRepository.GetByIdAsync(bookingId, cancellationToken);
+            return await _bookingRepository.GetAllByUserId(userId, cancellationToken);
+        }
+
+        public async Task<Booking> GetBookingByIdAsync(Guid bookingId, Guid userId, CancellationToken cancellationToken)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(bookingId, cancellationToken);
+
+            if (booking == null)
+            {
+                throw new NotFoundResourceException<Booking>(bookingId);
+            }
+
+            await EnsureUserHasAccessAsync(userId, booking.UserId, cancellationToken);
+
+            return booking;
         }
 
         public async Task<Booking> CreateBookingAsync(Guid eventId, Guid userId, int requestedSeats, CancellationToken cancellationToken)
@@ -85,22 +99,34 @@ namespace EventsRestApi.Application.Services
             return addedBooking;
         }
 
-        public async Task CancelBookingAsync(Guid bookingId, Guid userId, UserRole userRole, CancellationToken cancellationToken)
+        public async Task<bool> DeleteBookingAsync(Guid bookingId, Guid userId, CancellationToken cancellationToken)
         {
-            var booking = await _bookingRepository.GetByIdAsync(bookingId, cancellationToken);
+            var booking = await GetBookingByIdAsync(bookingId, userId, cancellationToken);
 
-            if (booking == null)
-            {
-                throw new NotFoundResourceException<Booking>(bookingId);
-            }
+            return await _bookingRepository.DeleteAsync(bookingId, cancellationToken);
+        }
 
-            if (userRole != UserRole.Admin && booking.UserId != userId)
-            {
-                throw new ForbiddenException(userId);
-            }
-            
+        public async Task CancelBookingAsync(Guid bookingId, Guid userId, CancellationToken cancellationToken)
+        {
+            var booking = await GetBookingByIdAsync(bookingId, userId, cancellationToken);
+
             booking.Cancel(_timeProvider.GetUtcNow().UtcDateTime);
             await _bookingRepository.SaveContextAsync(cancellationToken);
+        }
+
+        private async Task EnsureUserHasAccessAsync(Guid userId, Guid bookingUserId, CancellationToken cancellationToken)
+        {
+            var user = await _userService.GetById(userId, cancellationToken);
+
+            if (user == null)
+            {
+                throw new UnauthorizedAccessException("Пользователь не найден в системе.");
+            }
+
+            if (user.Role != UserRole.Admin && bookingUserId != user.Id)
+            {
+                throw new ForbiddenException(user.Id);
+            }
         }
     }
 }
