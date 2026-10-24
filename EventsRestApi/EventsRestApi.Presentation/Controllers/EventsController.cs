@@ -6,7 +6,6 @@ using EventsRestApi.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
 
 namespace EventsRestApi.Presentation.Controllers
 {

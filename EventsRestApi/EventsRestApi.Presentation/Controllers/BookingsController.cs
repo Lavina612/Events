@@ -3,8 +3,6 @@ using EventsRestApi.Application.Mappers;
 using EventsRestApi.Application.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 namespace EventsRestApi.Presentation.Controllers
 {
