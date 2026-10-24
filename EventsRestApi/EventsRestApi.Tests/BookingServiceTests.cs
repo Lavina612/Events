@@ -1,5 +1,6 @@
 ﻿using EventsRestApi.Application.Exceptions;
-using EventsRestApi.Application.RepositoryInterfaces;
+using EventsRestApi.Application.InterfacesForInfrastructure.Repositories;
+using EventsRestApi.Application.InterfacesForInfrastructure.Services;
 using EventsRestApi.Application.Services;
 using EventsRestApi.Application.Services.Interfaces;
 using EventsRestApi.Application.Settings;
@@ -7,12 +8,14 @@ using EventsRestApi.Domain.Exceptions;
 using EventsRestApi.Domain.Models.Entities;
 using EventsRestApi.Infrastructure.Data;
 using EventsRestApi.Infrastructure.Data.Repositories;
+using EventsRestApi.Infrastructure.Services;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 
@@ -35,8 +38,14 @@ namespace EventsRestApi.Tests
 
             _services.AddScoped<IEventRepository, EventRepository>();
             _services.AddScoped<IBookingRepository, BookingRepository>();
+            _services.AddScoped<IUserRepository, UserRepository>();
+
+            _services.AddScoped<ITokenService, TokenService>();
+
             _services.AddScoped<IEventService, EventService>();
             _services.AddScoped<IBookingService, BookingService>();
+            _services.AddScoped<IPasswordService, PasswordService>();
+            _services.AddScoped<IUserService, UserService>();
 
             _services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
 
@@ -72,10 +81,14 @@ namespace EventsRestApi.Tests
         public async Task GetBookingByIdAsync_WithExistingId_ReturnBooking()
         {
             /*---ARRANGE---*/
-            var booking = AddBookingToDb(1, 1, 1, fixedTime.UtcDateTime);
+            var userNumber = 1;
+
+            var user = await AddUserToContextAsync(userNumber);
+            var booking = await AddBookingToContext(1, 1, userNumber, 1, fixedTime.UtcDateTime);
+            await _context.SaveChangesAsync();
 
             /*---ACT---*/
-            var result = await _bookingService.GetBookingByIdAsync(booking.Id, CancellationToken.None);
+            var result = await _bookingService.GetBookingByIdAsync(booking.Id, user.Id, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.Equivalent(booking, result, true);
@@ -87,23 +100,30 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var bookingId = Guid.Empty;
 
-            /*---ACT---*/
-            var result = await _bookingService.GetBookingByIdAsync(bookingId, CancellationToken.None);
+            var user = await AddUserToContextAsync(1);
+            await _context.SaveChangesAsync();
 
-            /*---ASSERT---*/
-            Assert.Null(result);
+            /*---ACT & ASSERT---*/
+            await Assert.ThrowsAnyAsync<NotFoundResourceException<Booking>>(async () =>
+                await _bookingService.GetBookingByIdAsync(bookingId, user.Id, CancellationToken.None));
         }
 
         [Fact]
         public async Task GetBookingByIdAsync_CancelBeforeStart_ThrowOperationCancelledException()
         {
             /*---ARRANGE---*/
+            var userNumber = 1;
+
+            var user = await AddUserToContextAsync(userNumber);
+            var booking = await AddBookingToContext(1, 1, userNumber, 1, fixedTime.UtcDateTime);
+            await _context.SaveChangesAsync();
+
             using var cts = new CancellationTokenSource();
             cts.Cancel();
 
             /*---ACT & ASSERT---*/
             var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
-                await _bookingService.GetBookingByIdAsync(Guid.Empty, cts.Token));
+                await _bookingService.GetBookingByIdAsync(booking.Id, user.Id, cts.Token));
 
             Assert.Equal(cts.Token, exception.CancellationToken);
         }
@@ -119,12 +139,17 @@ namespace EventsRestApi.Tests
             //Дата createdAt высчитывается относительно fixedTime: 2026.06.01 09:01:01
             var createdAt = fixedTime.UtcDateTime;
             var eventNumber = 1;
-            var @event = AddEventToDb(eventNumber, createdAt.AddDays(-1), createdAt.AddDays(1), 1);
-            var booking = AddBookingToDb(1, eventNumber, 1, createdAt);
+            var userNumber = 1;
+
+            var user = await AddUserToContextAsync(userNumber);
+            var @event = await AddEventToContextAsync(eventNumber, createdAt.AddDays(5), createdAt.AddDays(10), 1);
+            var booking = await AddBookingToContext(1, eventNumber, userNumber, 1, createdAt);
+            await _context.SaveChangesAsync();
+
             var availableSeatsAfterBooking = @event.AvailableSeats - booking.BookedSeats;
 
             /*---ACT---*/
-            var result = await _bookingService.CreateBookingAsync(@event.Id, booking.BookedSeats, CancellationToken.None);
+            var result = await _bookingService.CreateBookingAsync(@event.Id, user.Id, booking.BookedSeats, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.NotEqual(Guid.Empty, result.Id);
@@ -140,12 +165,16 @@ namespace EventsRestApi.Tests
             var createdAt = fixedTime.UtcDateTime;
             var requestedSeats = 1;
             var successfulBookingsCount = 2;
-            var @event = AddEventToDb(1, createdAt.AddDays(-1), createdAt.AddDays(1), 2);
+
+            var user = await AddUserToContextAsync(1);
+            var @event = await AddEventToContextAsync(1, createdAt.AddDays(5), createdAt.AddDays(10), 2);
+            await _context.SaveChangesAsync();
+
             var availableSeatsAfterBooking = @event.AvailableSeats - requestedSeats * successfulBookingsCount;
 
             /*---ACT---*/
-            var firstResult = await _bookingService.CreateBookingAsync(@event.Id, requestedSeats, CancellationToken.None);
-            var secondResult = await _bookingService.CreateBookingAsync(@event.Id, requestedSeats, CancellationToken.None);
+            var firstResult = await _bookingService.CreateBookingAsync(@event.Id, user.Id, requestedSeats, CancellationToken.None);
+            var secondResult = await _bookingService.CreateBookingAsync(@event.Id, user.Id, requestedSeats, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.NotNull(firstResult);
@@ -161,19 +190,87 @@ namespace EventsRestApi.Tests
             //Дата createdAt высчитывается относительно fixedTime: 2026.06.01 09:01:01
             var createdAt = fixedTime.UtcDateTime;
             var eventNumber = 1;
-            var @event = AddEventToDb(eventNumber, createdAt.AddDays(-1), createdAt.AddDays(1), 1);
-            var booking = AddBookingToDb(1, eventNumber, 1, createdAt);
+            var userNumber = 1;
+
+            var user = await AddUserToContextAsync(userNumber);
+            var @event = await AddEventToContextAsync(eventNumber, createdAt.AddDays(5), createdAt.AddDays(10), 1);
+            var booking = await AddBookingToContext(1, eventNumber, userNumber, 1, createdAt);
+            await _context.SaveChangesAsync();
 
             /*---ACT---*/
             @event.TryReserveSeats(1);
             @event.ReleaseSeats(1);
             var availableSeatsAfterBooking = @event.AvailableSeats - booking.BookedSeats;
 
-            var result = await _bookingService.CreateBookingAsync(@event.Id, booking.BookedSeats, CancellationToken.None);
+            var result = await _bookingService.CreateBookingAsync(@event.Id, user.Id, booking.BookedSeats, CancellationToken.None);
 
             /*---ASSERT---*/
             Assert.NotEqual(Guid.Empty, result.Id);
             result.Should().BeEquivalentTo(booking, options => options.Excluding(x => x.Id));
+            Assert.Equal(availableSeatsAfterBooking, @event.AvailableSeats);
+        }
+
+        [Fact]
+        public async Task CreateBookingAsync_TryCreateAfterActiveBookingsLimitExceeded_ThrowExceedingActiveBookingLimitException()
+        {
+            /*---ARRANGE---*/
+            var currentSettings = _serviceProvider.GetRequiredService<IOptions<UserSettings>>().Value;
+            currentSettings.ActiveBookingLimit = 1;
+
+            /*---ARRANGE---*/
+            //Дата createdAt высчитывается относительно fixedTime: 2026.06.01 09:01:01
+            var createdAt = fixedTime.UtcDateTime;
+            var requestedSeats = 1;
+            var successfulBookingsCount = 1;
+            var eventNumber = 1;
+            var userNumber = 1;
+
+            var user = await AddUserToContextAsync(userNumber);
+            var @event = await AddEventToContextAsync(eventNumber, createdAt.AddDays(5), createdAt.AddDays(10), 1);
+            var booking = await AddBookingToContext(1, eventNumber, userNumber, requestedSeats, createdAt, BookingStatus.Confirmed);
+            await _context.SaveChangesAsync();
+
+            var availableSeatsAfterBooking = @event.AvailableSeats - requestedSeats * successfulBookingsCount;
+
+            /*---ACT & ASSERT---*/
+            var result = await Assert.ThrowsAnyAsync<ExceedingActiveBookingLimitException>(async () =>
+                await _bookingService.CreateBookingAsync(@event.Id, user.Id, requestedSeats, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task CreateBookingAsync_AnotherUserExceededActiveBookingsCount_ReturnCreatedBooking()
+        {
+            /*---ARRANGE---*/
+            var currentSettings = _serviceProvider.GetRequiredService<IOptions<UserSettings>>().Value;
+            currentSettings.ActiveBookingLimit = 1;
+
+            //Дата createdAt высчитывается относительно fixedTime: 2026.06.01 09:01:01
+            var createdAt = fixedTime.UtcDateTime;
+            var requestedSeats = 1;
+            var successfulBookingsCount = 1;
+            var eventNumber = 1;
+            var user1Number = 1;
+            var user2Number = 2;
+
+            var user1 = await AddUserToContextAsync(user1Number);
+            var user2 = await AddUserToContextAsync(user2Number);
+            var @event = await AddEventToContextAsync(eventNumber, createdAt.AddDays(5), createdAt.AddDays(10), 2);
+            var booking = await AddBookingToContext(1, eventNumber, user1Number, requestedSeats, createdAt, BookingStatus.Confirmed);
+            await _context.SaveChangesAsync();
+
+            var expectedBooking = await AddBookingToContext(2, eventNumber, user2Number, requestedSeats, createdAt, BookingStatus.Pending);
+
+            var availableSeatsAfterBooking = @event.AvailableSeats - requestedSeats * successfulBookingsCount;
+
+            /*---ACT---*/
+            var result = await _bookingService.CreateBookingAsync(@event.Id, user2.Id, booking.BookedSeats, CancellationToken.None);
+
+            /*---ASSERT---*/
+            Assert.NotEqual(Guid.Empty, result.Id);
+            result.Should().BeEquivalentTo(expectedBooking, options =>
+                options.Excluding(x => x.Id)
+                    .Excluding(x => x.Event)
+                    .Excluding(x => x.User));
             Assert.Equal(availableSeatsAfterBooking, @event.AvailableSeats);
         }
 
@@ -186,15 +283,20 @@ namespace EventsRestApi.Tests
             var requestedSeats = 1;
             var successfulBookingsCount = 1;
             var eventNumber = 1;
-            var @event = AddEventToDb(eventNumber, createdAt.AddDays(-1), createdAt.AddDays(1), 1);
-            var booking = AddBookingToDb(1, eventNumber, requestedSeats, createdAt);
+            var userNumber = 1;
+
+            var user = await AddUserToContextAsync(userNumber);
+            var @event = await AddEventToContextAsync(eventNumber, createdAt.AddDays(5), createdAt.AddDays(10), 1);
+            var booking = await AddBookingToContext(1, eventNumber, userNumber, requestedSeats, createdAt);
+            await _context.SaveChangesAsync();
+
             var availableSeatsAfterBooking = @event.AvailableSeats - requestedSeats * successfulBookingsCount;
 
             /*---ACT & ASSERT---*/
-            var firstResult = await _bookingService.CreateBookingAsync(@event.Id, requestedSeats, CancellationToken.None);
+            var firstResult = await _bookingService.CreateBookingAsync(@event.Id, user.Id, requestedSeats, CancellationToken.None);
 
             var secondResultException = await Assert.ThrowsAnyAsync<NoAvailableSeatsException>(async () =>
-                await _bookingService.CreateBookingAsync(@event.Id, requestedSeats, CancellationToken.None));
+                await _bookingService.CreateBookingAsync(@event.Id, user.Id, requestedSeats, CancellationToken.None));
 
             Assert.NotEqual(Guid.Empty, firstResult.Id);
             firstResult.Should().BeEquivalentTo(booking, options => options.Excluding(x => x.Id));
@@ -207,9 +309,29 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             var eventId = Guid.Empty;
 
+            var user = await AddUserToContextAsync(1);
+            await _context.SaveChangesAsync();
+
             /*---ACT & ASSERT---*/
-            await Assert.ThrowsAnyAsync<NotFoundEventException>(async () =>
-                await _bookingService.CreateBookingAsync(eventId, It.IsAny<int>(), CancellationToken.None));
+            await Assert.ThrowsAnyAsync<NotFoundResourceException<Event>>(async () =>
+                await _bookingService.CreateBookingAsync(eventId, user.Id, It.IsAny<int>(), CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task CreateBookingAsync_WithAlreadyStartedEvent_ThrowStartedEventException()
+        {
+            /*---ARRANGE---*/
+            //Дата startAt высчитывается относительно fixedTime: 2026.06.06 09:06:00
+            var startAt = fixedTime.AddDays(-2).AddMinutes(1).UtcDateTime;
+            var endAt = startAt.AddDays(4);
+
+            var user = await AddUserToContextAsync(1);
+            var @event = await AddEventToContextAsync(1, startAt, endAt, 1);
+            await _context.SaveChangesAsync();
+
+            /*---ACT & ASSERT---*/
+            await Assert.ThrowsAnyAsync<StartedEventException>(async () =>
+                await _bookingService.CreateBookingAsync(@event.Id, user.Id, 1, CancellationToken.None));
         }
 
         [Fact]
@@ -219,11 +341,14 @@ namespace EventsRestApi.Tests
             //Дата startAt высчитывается относительно fixedTime: 2026.06.06 09:06:00
             var startAt = fixedTime.AddDays(-2).AddMinutes(1).UtcDateTime;
             var endAt = startAt.AddDays(1);
-            var @event = AddEventToDb(1, startAt, endAt, 1);
+
+            var user = await AddUserToContextAsync(1);
+            var @event = await AddEventToContextAsync(1, startAt, endAt, 1);
+            await _context.SaveChangesAsync();
 
             /*---ACT & ASSERT---*/
             await Assert.ThrowsAnyAsync<FinishedEventException>(async () =>
-                await _bookingService.CreateBookingAsync(@event.Id, 1, CancellationToken.None));
+                await _bookingService.CreateBookingAsync(@event.Id, user.Id, 1, CancellationToken.None));
         }
 
         [Fact]
@@ -233,11 +358,14 @@ namespace EventsRestApi.Tests
             //Дата startAt высчитывается относительно fixedTime: 2026.06.06 09:06:00
             var startAt = fixedTime.AddDays(1).AddMinutes(1).UtcDateTime;
             var endAt = startAt.AddDays(5);
-            var @event = AddEventToDb(1, startAt, endAt, 1);
+
+            var user = await AddUserToContextAsync(1);
+            var @event = await AddEventToContextAsync(1, startAt, endAt, 1);
+            await _context.SaveChangesAsync();
 
             /*---ACT & ASSERT---*/
             var exception = await Assert.ThrowsAnyAsync<NoAvailableSeatsException>(async () =>
-                await _bookingService.CreateBookingAsync(@event.Id, 5, CancellationToken.None));
+                await _bookingService.CreateBookingAsync(@event.Id, user.Id, 5, CancellationToken.None));
         }
 
         [Fact]
@@ -251,7 +379,10 @@ namespace EventsRestApi.Tests
 
             //Дата createdAt высчитывается относительно fixedTime: 2026.06.01 09:01:01
             var createdAt = fixedTime.UtcDateTime;
-            var @event = AddEventToDb(1, createdAt.AddDays(-1), createdAt.AddDays(1), eventTotalSeats);
+
+            var user = await AddUserToContextAsync(1);
+            var @event = await AddEventToContextAsync(1, createdAt.AddDays(5), createdAt.AddDays(10), eventTotalSeats);
+            await _context.SaveChangesAsync();
 
             /*---ACT---*/
             var tasks = new List<Task<Booking>>();
@@ -263,7 +394,7 @@ namespace EventsRestApi.Tests
                         using var scope = _serviceProvider.CreateScope();
                         var bookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
 
-                        return await bookingService.CreateBookingAsync(@event.Id, requestedSeats, CancellationToken.None);
+                        return await bookingService.CreateBookingAsync(@event.Id, user.Id, requestedSeats, CancellationToken.None);
                     }));
             }
 
@@ -311,7 +442,9 @@ namespace EventsRestApi.Tests
             /*---ARRANGE---*/
             //Дата createdAt высчитывается относительно fixedTime: 2026.06.01 09:01:01
             var createdAt = fixedTime.UtcDateTime;
-            var @event = AddEventToDb(1, createdAt.AddDays(-1), createdAt.AddDays(1), 5);
+            var user = await AddUserToContextAsync(1);
+            var @event = await AddEventToContextAsync(1, createdAt.AddDays(-1), createdAt.AddDays(1), 5);
+            await _context.SaveChangesAsync();
 
             var requestedSeats = 1;
             var bookingRequestsCount = 5;
@@ -369,7 +502,7 @@ namespace EventsRestApi.Tests
                         using var scope = localProvider.CreateScope();
                         var bookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
 
-                        return await bookingService.CreateBookingAsync(@event.Id, requestedSeats, CancellationToken.None);
+                        return await bookingService.CreateBookingAsync(@event.Id, user.Id, requestedSeats, CancellationToken.None);
                     }));
             }
 
@@ -395,14 +528,14 @@ namespace EventsRestApi.Tests
 
             /*---ACT & ASSERT---*/
             var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
-                await _bookingService.CreateBookingAsync(Guid.Empty, 0, cts.Token));
+                await _bookingService.CreateBookingAsync(Guid.Empty, Guid.Empty, 0, cts.Token));
 
             Assert.Equal(cts.Token, exception.CancellationToken);
         }
 
         #endregion
 
-        private Event AddEventToDb(
+        private async Task<Event> AddEventToContextAsync(
             int number,
             DateTime startAt,
             DateTime endAt,
@@ -416,15 +549,15 @@ namespace EventsRestApi.Tests
                 endAt,
                 totalSeats);
 
-            _context.Events.Add(@event);
-            _context.SaveChanges();
+            await _context.Events.AddAsync(@event);
 
             return @event;
         }
 
-        private Booking AddBookingToDb(
+        private async Task<Booking> AddBookingToContext(
             int numberBooking,
             int numberEvent,
+            int numberUser,
             int bookedSeats,
             DateTime createdAt,
             BookingStatus status = BookingStatus.Pending)
@@ -432,14 +565,29 @@ namespace EventsRestApi.Tests
             var booking = new Booking(
                 new Guid($"B0000000-0000-0000-0000-00000000000{numberBooking}"),
                 new Guid($"E0000000-0000-0000-0000-00000000000{numberEvent}"),
+                new Guid($"A0000000-0000-0000-0000-00000000000{numberUser}"),
                 status,
                 bookedSeats,
                 createdAt);
 
-            _context.Bookings.Add(booking);
-            _context.SaveChanges();
+            await _context.Bookings.AddAsync(booking);
 
             return booking;
+        }
+
+        private async Task<User> AddUserToContextAsync(
+            int number,
+            UserRole role = UserRole.User)
+        {
+            var user = new User(
+                new Guid($"A0000000-0000-0000-0000-00000000000{number}"),
+                $"User {number}",
+                $"Hashed Password {number}",
+                role);
+
+            await _context.Users.AddAsync(user);
+
+            return user;
         }
     }
 }
