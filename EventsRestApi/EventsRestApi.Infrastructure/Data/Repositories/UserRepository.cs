@@ -20,7 +20,7 @@ namespace EventsRestApi.Infrastructure.Data.Repositories
 
         public async Task<User?> GetByLoginAsync(string login, CancellationToken cancellationToken)
         {
-            return await _context.Users.FirstOrDefaultAsync(x =>  x.Login == login, cancellationToken);
+            return await _context.Users.FirstOrDefaultAsync(x => x.Login == login, cancellationToken);
         }
 
         public async Task<User> AddAsync(string login, string hashedPassword, UserRole role, CancellationToken cancellationToken)
@@ -37,9 +37,12 @@ namespace EventsRestApi.Infrastructure.Data.Repositories
             return user;
         }
 
-        public async Task<int> GetBookingsCountAsync(Guid id, CancellationToken cancellationToken)
+        public async Task<int> GetActiveBookingsCountAsync(Guid id, CancellationToken cancellationToken)
         {
-            return await _context.Bookings.CountAsync(x => x.UserId == id, cancellationToken);
+            return await _context.Bookings.CountAsync(x =>
+                x.UserId == id
+                && (x.Status == BookingStatus.Pending || x.Status == BookingStatus.Confirmed),
+                cancellationToken);
         }
     }
 }

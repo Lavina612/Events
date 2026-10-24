@@ -1,4 +1,5 @@
-﻿using EventsRestApi.Application.Services.Interfaces;
+﻿using EventsRestApi.Application.Exceptions;
+using EventsRestApi.Application.Services.Interfaces;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -25,7 +26,7 @@ namespace EventsRestApi.Application.Services
 
             if (!string.Equals(verifyingHashedPassword, hashedPassword, StringComparison.OrdinalIgnoreCase))
             {
-                throw new UnauthorizedAccessException("Неверный логин или пароль.");
+                throw new InvalidCredentialsException();
             }
         }
     }

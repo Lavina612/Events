@@ -4,6 +4,6 @@
     {
         public const string SectionName = "UserSettings";
 
-        public int ActiveBookingLimit { get; } = 10;
+        public int ActiveBookingLimit { get; init; } = 10;
     }
 }

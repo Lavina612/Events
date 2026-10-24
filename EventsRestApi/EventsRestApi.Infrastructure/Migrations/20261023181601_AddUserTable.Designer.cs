@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EventsRestApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261022204447_AddUserTable")]
+    [Migration("20261023181601_AddUserTable")]
     partial class AddUserTable
     {
         /// <inheritdoc />
@@ -125,10 +125,10 @@ namespace EventsRestApi.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<string>("HashPassword")
+                    b.Property<string>("HashedPassword")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("hash_password");
+                        .HasColumnName("hashed_password");
 
                     b.Property<string>("Login")
                         .IsRequired()

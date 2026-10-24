@@ -90,8 +90,13 @@ namespace EventsRestApi.Presentation.Middlewares
                     error.Extensions["startAt"] = ex.EventStartAt;
                     break;
 
-                case UnauthorizedAccessException ex:
+                case InvalidCredentialsException ex:
                     error.Status = StatusCodes.Status401Unauthorized;
+                    break;
+
+                case InvalidTokenException ex:
+                    error.Status = StatusCodes.Status401Unauthorized;
+                    error.Extensions["claimName"] = ex.ClaimName;
                     break;
 
                 case ForbiddenException ex:

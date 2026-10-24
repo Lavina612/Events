@@ -7,6 +7,6 @@ namespace EventsRestApi.Application.InterfacesForInfrastructure.Repositories
         Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
         Task<User?> GetByLoginAsync(string login, CancellationToken cancellationToken);
         Task<User> AddAsync(string login, string hashedPassword, UserRole role, CancellationToken cancellationToken);
-        Task<int> GetBookingsCountAsync(Guid id, CancellationToken cancellationToken);
+        Task<int> GetActiveBookingsCountAsync(Guid id, CancellationToken cancellationToken);
     }
 }

@@ -24,7 +24,7 @@ namespace EventsRestApi.Migrations
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     login = table.Column<string>(type: "text", nullable: false),
-                    hash_password = table.Column<string>(type: "text", nullable: false),
+                    hashed_password = table.Column<string>(type: "text", nullable: false),
                     role = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>

@@ -15,8 +15,8 @@
         public User() { }
 
         public User(
-            Guid id, 
-            string login, 
+            Guid id,
+            string login,
             string hashPassword,
             UserRole role)
         {

@@ -4,6 +4,7 @@ using EventsRestApi.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Application.InterfacesForInfrastructure.Services;
 using EventsRestApi.Application.Services.Interfaces;
 using EventsRestApi.Application.Settings;
+using EventsRestApi.Domain.Exceptions;
 using EventsRestApi.Domain.Models.Entities;
 using Microsoft.Extensions.Options;
 
@@ -31,17 +32,29 @@ namespace EventsRestApi.Application.Services
             _userSettings = userSettings.Value;
         }
 
-        public async Task<User?> GetById(Guid id, CancellationToken cancellationToken)
+        public async Task<User> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
-            return await _userRepository.GetByIdAsync(id, cancellationToken);
+            var user = await _userRepository.GetByIdAsync(id, cancellationToken);
+
+            if (user == null)
+            {
+                throw new NotFoundResourceException<User>(id);
+            }
+
+            return user;
         }
 
-        public async Task<bool> CanMakeBooking(Guid userId, CancellationToken cancellationToken)
+        public async Task EnsureCanMakeBookingAsync(Guid userId, CancellationToken cancellationToken)
         {
-            return await _userRepository.GetBookingsCountAsync(userId, cancellationToken) < _userSettings.ActiveBookingLimit;
+            var activeBookingsCount = await _userRepository.GetActiveBookingsCountAsync(userId, cancellationToken);
+
+            if (activeBookingsCount >= _userSettings.ActiveBookingLimit)
+            {
+                throw new ExceedingActiveBookingLimitException(userId, _userSettings.ActiveBookingLimit);
+            }
         }
 
-        public async Task<User> Register(UserCredentialsDto userCredentialsDto, UserRole role, CancellationToken cancellationToken)
+        public async Task<User> RegisterAsync(UserCredentialsDto userCredentialsDto, UserRole role, CancellationToken cancellationToken)
         {
             var foundUser = await _userRepository.GetByLoginAsync(userCredentialsDto.Login, cancellationToken);
 
@@ -55,13 +68,13 @@ namespace EventsRestApi.Application.Services
             return await _userRepository.AddAsync(userCredentialsDto.Login, hashedPassword, role, cancellationToken);
         }
 
-        public async Task<string> LogIn(UserCredentialsDto userCredentialsDto, CancellationToken cancellationToken)
+        public async Task<string> LogInAsync(UserCredentialsDto userCredentialsDto, CancellationToken cancellationToken)
         {
             var user = await _userRepository.GetByLoginAsync(userCredentialsDto.Login, cancellationToken);
 
             if (user == null)
             {
-                throw new UnauthorizedAccessException("Неверный логин или пароль.");
+                throw new InvalidCredentialsException();
             }
 
             _passwordService.VerifyPassword(userCredentialsDto.Password, user.HashedPassword);

@@ -4,8 +4,8 @@
     {
         public const string SectionName = "BookingBackgroundServiceSettings";
 
-        public int BunchCount { get; set; } = 5;
+        public int BunchCount { get; init; } = 5;
 
-        public int DelayMilliseconds { get; set; } = 2000;
+        public int DelayMilliseconds { get; init; } = 2000;
     }
 }

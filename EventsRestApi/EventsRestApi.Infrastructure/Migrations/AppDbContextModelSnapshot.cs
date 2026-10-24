@@ -122,10 +122,10 @@ namespace EventsRestApi.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<string>("HashPassword")
+                    b.Property<string>("HashedPassword")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("hash_password");
+                        .HasColumnName("hashed_password");
 
                     b.Property<string>("Login")
                         .IsRequired()

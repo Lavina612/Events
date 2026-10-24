@@ -10,7 +10,7 @@ namespace EventsRestApi.Presentation.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class UserController : ControllerBase
+    public class UserController : BaseApiController
     {
         private readonly IUserService _userService;
 
@@ -28,7 +28,7 @@ namespace EventsRestApi.Presentation.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<UserResponseDto>> GetUserById(Guid id, CancellationToken cancellationToken = default)
         {
-            var foundUser = await _userService.GetById(id, cancellationToken);
+            var foundUser = await _userService.GetByIdAsync(id, cancellationToken);
 
             if (foundUser == null)
             {
@@ -47,7 +47,7 @@ namespace EventsRestApi.Presentation.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<UserResponseDto>> Register(UserCredentialsDto userCredentialsDto, UserRole role = UserRole.User, CancellationToken cancellationToken = default)
         {
-            var registeredUser = await _userService.Register(userCredentialsDto, role, cancellationToken);
+            var registeredUser = await _userService.RegisterAsync(userCredentialsDto, role, cancellationToken);
 
             return StatusCode(StatusCodes.Status201Created, Mapper.MapToUserResponseDto(registeredUser));
         }
@@ -59,7 +59,7 @@ namespace EventsRestApi.Presentation.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<TokenResponseDto>> LogIn(UserCredentialsDto userCredentialsDto, CancellationToken cancellationToken = default)
         {
-            var token = await _userService.LogIn(userCredentialsDto, cancellationToken);
+            var token = await _userService.LogInAsync(userCredentialsDto, cancellationToken);
 
             return Ok(new TokenResponseDto(token));
         }

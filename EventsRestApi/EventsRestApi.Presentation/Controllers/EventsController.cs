@@ -13,26 +13,11 @@ namespace EventsRestApi.Presentation.Controllers
     [ApiController]
     [Route("[controller]")]
     [Authorize]
-    public class EventsController : ControllerBase
+    public class EventsController : BaseApiController
     {
         private readonly IEventService _eventService;
 
         private readonly IBookingService _bookingService;
-
-        private Guid CurrentUserId
-        {
-            get
-            {
-                var claimValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-                if (string.IsNullOrEmpty(claimValue) || !Guid.TryParse(claimValue, out var userId))
-                {
-                    throw new UnauthorizedAccessException("Идентификатор пользователя не найден в токене.");
-                }
-
-                return userId;
-            }
-        }
 
         public EventsController(
             IEventService eventService,

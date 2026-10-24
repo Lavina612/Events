@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
@@ -9,6 +10,8 @@ namespace EventsRestApi.Presentation
     {
         public static IServiceCollection AddApiAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
+            JsonWebTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -28,6 +31,7 @@ namespace EventsRestApi.Presentation
 
                 options.TokenValidationParameters = new TokenValidationParameters()
                 {
+                    NameClaimType = "unique_name",
                     RoleClaimType = "role",
 
                     ValidateIssuer = true,
@@ -45,6 +49,29 @@ namespace EventsRestApi.Presentation
             });
 
             services.AddAuthorization();
+
+            return services;
+        }
+
+        public static IServiceCollection AddSwaggerForJwt(this IServiceCollection services)
+        {
+            services.AddSwaggerGen(options =>
+            {
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Scheme = JwtBearerDefaults.AuthenticationScheme,
+                    BearerFormat = "JWT",
+                    Description = "Введите только ваш JWT токен (слово Bearer добавлять не нужно)."
+                });
+
+                options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+                {
+                    [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
+                });
+            });
 
             return services;
         }

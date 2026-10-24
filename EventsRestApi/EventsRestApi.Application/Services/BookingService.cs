@@ -1,10 +1,8 @@
 ﻿using EventsRestApi.Application.Exceptions;
 using EventsRestApi.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Application.Services.Interfaces;
-using EventsRestApi.Application.Settings;
 using EventsRestApi.Domain.Exceptions;
 using EventsRestApi.Domain.Models.Entities;
-using Microsoft.Extensions.Options;
 
 namespace EventsRestApi.Application.Services
 {
@@ -20,23 +18,19 @@ namespace EventsRestApi.Application.Services
 
         private readonly TimeProvider _timeProvider;
 
-        private readonly UserSettings _userSettings;
-
         public BookingService(
             IBookingRepository bookingRepository,
             IEventService eventService,
             IUserService userService,
-            TimeProvider timeProvider,
-            IOptions<UserSettings> userSettings)
+            TimeProvider timeProvider)
         {
             _bookingRepository = bookingRepository;
             _eventService = eventService;
             _userService = userService;
             _timeProvider = timeProvider;
-            _userSettings = userSettings.Value;
         }
 
-        public async Task<IReadOnlyList<Booking>> GetAllByUserId(Guid userId, CancellationToken cancellationToken)
+        public async Task<IReadOnlyList<Booking>> GetAllByUserIdAsync(Guid userId, CancellationToken cancellationToken)
         {
             return await _bookingRepository.GetAllByUserId(userId, cancellationToken);
         }
@@ -57,10 +51,7 @@ namespace EventsRestApi.Application.Services
 
         public async Task<Booking> CreateBookingAsync(Guid eventId, Guid userId, int requestedSeats, CancellationToken cancellationToken)
         {
-            if (!await _userService.CanMakeBooking(userId, cancellationToken))
-            {
-                throw new ExceedingActiveBookingLimitException(userId, _userSettings.ActiveBookingLimit);
-            }
+            await _userService.EnsureCanMakeBookingAsync(userId, cancellationToken);
 
             Booking? addedBooking = null;
 
@@ -99,29 +90,30 @@ namespace EventsRestApi.Application.Services
             return addedBooking;
         }
 
-        public async Task<bool> DeleteBookingAsync(Guid bookingId, Guid userId, CancellationToken cancellationToken)
-        {
-            var booking = await GetBookingByIdAsync(bookingId, userId, cancellationToken);
-
-            return await _bookingRepository.DeleteAsync(bookingId, cancellationToken);
-        }
-
         public async Task CancelBookingAsync(Guid bookingId, Guid userId, CancellationToken cancellationToken)
         {
             var booking = await GetBookingByIdAsync(bookingId, userId, cancellationToken);
 
+            if (booking.Status == BookingStatus.Cancelled)
+            {
+                return;
+            }
+
             booking.Cancel(_timeProvider.GetUtcNow().UtcDateTime);
+
+            var foundEvent = await _eventService.GetByIdAsync(booking.EventId, cancellationToken);
+
+            if (foundEvent != null)
+            {
+                foundEvent.ReleaseSeats(booking.BookedSeats);
+            }
+
             await _bookingRepository.SaveContextAsync(cancellationToken);
         }
 
         private async Task EnsureUserHasAccessAsync(Guid userId, Guid bookingUserId, CancellationToken cancellationToken)
         {
-            var user = await _userService.GetById(userId, cancellationToken);
-
-            if (user == null)
-            {
-                throw new UnauthorizedAccessException("Пользователь не найден в системе.");
-            }
+            var user = await _userService.GetByIdAsync(userId, cancellationToken);
 
             if (user.Role != UserRole.Admin && bookingUserId != user.Id)
             {

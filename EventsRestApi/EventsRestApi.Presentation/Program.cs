@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers().AddJsonOptions(x =>
     x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerForJwt();
 
 builder.Services.AddApiAuthentication(builder.Configuration);
 
