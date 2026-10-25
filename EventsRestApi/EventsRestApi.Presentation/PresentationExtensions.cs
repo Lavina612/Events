@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -46,6 +47,28 @@ namespace EventsRestApi.Presentation
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
                 };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnChallenge = async context =>
+                    {
+                        context.HandleResponse();
+
+                        await WriteProblemDetailsAsync(
+                            context.HttpContext,
+                            StatusCodes.Status401Unauthorized,
+                            "Unauthorized",
+                            "Для выполнения этого действия необходимо войти в систему");
+                    },
+                    OnForbidden = async context =>
+                    {
+                        await WriteProblemDetailsAsync(
+                            context.HttpContext,
+                            StatusCodes.Status403Forbidden,
+                            "Forbidden",
+                            "У вас недостаточно прав для выполнения этой операции.");
+                    }
+                };
             });
 
             services.AddAuthorization();
@@ -74,6 +97,23 @@ namespace EventsRestApi.Presentation
             });
 
             return services;
+        }
+
+        private static Task WriteProblemDetailsAsync(HttpContext context, int statusCode, string title, string detail)
+        {
+            context.Response.StatusCode = statusCode;
+            context.Response.ContentType = "application/problem+json";
+
+            var factory = context.RequestServices.GetRequiredService<ProblemDetailsFactory>();
+            var problemDetails = factory.CreateProblemDetails(
+                context,
+                statusCode: statusCode,
+                title: title,
+                detail: detail);
+
+            return context.Response.WriteAsJsonAsync(problemDetails,
+                options: null,
+                contentType: "application/problem+json");
         }
     }
 }

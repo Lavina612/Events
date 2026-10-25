@@ -1,6 +1,6 @@
 ﻿using EventsRestApi.Application.Exceptions;
 using EventsRestApi.Domain.Exceptions;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace EventsRestApi.Presentation.Middlewares
 {
@@ -17,7 +17,7 @@ namespace EventsRestApi.Presentation.Middlewares
             _logger = logger;
         }
 
-        public async Task InvokeAsync(HttpContext httpContext)
+        public async Task InvokeAsync(HttpContext httpContext, ProblemDetailsFactory problemDetailsFactory)
         {
             try
             {
@@ -25,15 +25,25 @@ namespace EventsRestApi.Presentation.Middlewares
             }
             catch (Exception ex)
             {
-                await HandleException(httpContext, ex);
+                await HandleException(httpContext, ex, problemDetailsFactory);
             }
         }
 
-        private async Task HandleException(HttpContext httpContext, Exception ex)
+        private async Task HandleException(HttpContext httpContext, Exception ex, ProblemDetailsFactory problemDetailsFactory)
         {
-            var error = CreateProblemDetails(ex);
+            var (statusCode, extensions) = MapExceptionToDetails(ex);
 
-            if (error.Status == StatusCodes.Status500InternalServerError)
+            var problemDetails = problemDetailsFactory.CreateProblemDetails(
+                httpContext,
+                statusCode: statusCode,
+                detail: ex.Message);
+
+            foreach (var ext in extensions)
+            {
+                problemDetails.Extensions[ext.Key] = ext.Value;
+            }
+
+            if (problemDetails.Status == StatusCodes.Status500InternalServerError)
             {
                 _logger.LogError(
                     ex,
@@ -46,7 +56,7 @@ namespace EventsRestApi.Presentation.Middlewares
             {
                 _logger.LogWarning(
                     "Business exception ({StatusCode}): {Message}. Method = {Method}, Path = {Path}, RequestId = {RequestId}.",
-                    error.Status,
+                    problemDetails.Status,
                     ex.Message.TrimEnd('.'),
                     httpContext.Request.Method,
                     httpContext.Request.Path,
@@ -58,82 +68,81 @@ namespace EventsRestApi.Presentation.Middlewares
                 return;
             }
 
-            httpContext.Response.StatusCode = error.Status ?? StatusCodes.Status500InternalServerError;
-            httpContext.Response.ContentType = "application/json";
+            httpContext.Response.StatusCode = problemDetails.Status ?? StatusCodes.Status500InternalServerError;
+            httpContext.Response.ContentType = "application/problem+json";
 
-            await httpContext.Response.WriteAsJsonAsync(error);
+            await httpContext.Response.WriteAsJsonAsync(problemDetails,
+                options: null,
+                contentType: "application/problem+json");
         }
 
-        private ProblemDetails CreateProblemDetails(Exception exception)
+        private static (int statusCode, Dictionary<string, object?> extensions) MapExceptionToDetails(Exception exception)
         {
-            var error = new ProblemDetails
-            {
-                Detail = exception.Message
-            };
+            var extensions = new Dictionary<string, object?>();
+            int statusCode;
 
             switch (exception)
             {
                 case ArgumentException ex:
-                    error.Status = StatusCodes.Status400BadRequest;
-                    error.Extensions["paramName"] = ex.ParamName;
+                    statusCode = StatusCodes.Status400BadRequest;
+                    extensions["paramName"] = ex.ParamName;
                     break;
 
                 case FinishedEventException ex:
-                    error.Status = StatusCodes.Status400BadRequest;
-                    error.Extensions["eventId"] = ex.EventId;
-                    error.Extensions["endAt"] = ex.EventEndAt;
+                    statusCode = StatusCodes.Status400BadRequest;
+                    extensions["eventId"] = ex.EventId;
+                    extensions["eventEndAt"] = ex.EventEndAt;
                     break;
 
                 case StartedEventException ex:
-                    error.Status = StatusCodes.Status400BadRequest;
-                    error.Extensions["eventId"] = ex.EventId;
-                    error.Extensions["startAt"] = ex.EventStartAt;
+                    statusCode = StatusCodes.Status400BadRequest;
+                    extensions["eventId"] = ex.EventId;
+                    extensions["eventStartAt"] = ex.EventStartAt;
                     break;
 
                 case InvalidCredentialsException ex:
-                    error.Status = StatusCodes.Status401Unauthorized;
+                    statusCode = StatusCodes.Status401Unauthorized;
                     break;
 
                 case InvalidTokenException ex:
-                    error.Status = StatusCodes.Status401Unauthorized;
-                    error.Extensions["claimName"] = ex.ClaimName;
+                    statusCode = StatusCodes.Status401Unauthorized;
+                    extensions["claimName"] = ex.ClaimName;
                     break;
 
                 case ForbiddenException ex:
-                    error.Status = StatusCodes.Status403Forbidden;
-                    error.Extensions["userId"] = ex.UserId;
+                    statusCode = StatusCodes.Status403Forbidden;
                     break;
 
                 case BaseNotFoundException ex:
-                    error.Status = StatusCodes.Status404NotFound;
-                    error.Extensions["Id"] = ex.Id;
-                    error.Extensions["resourceType"] = ex.ResourceName;
+                    statusCode = StatusCodes.Status404NotFound;
+                    extensions["resourceId"] = ex.ResourceId;
+                    extensions["resourceType"] = ex.ResourceName;
                     break;
 
                 case NoAvailableSeatsException ex:
-                    error.Status = StatusCodes.Status409Conflict;
-                    error.Extensions["eventId"] = ex.EventId;
-                    error.Extensions["requestedSeats"] = ex.RequestedSeats;
-                    error.Extensions["availableSeats"] = ex.AvailableSeats;
+                    statusCode = StatusCodes.Status409Conflict;
+                    extensions["eventId"] = ex.EventId;
+                    extensions["requestedSeats"] = ex.RequestedSeats;
+                    extensions["availableSeats"] = ex.AvailableSeats;
                     break;
 
                 case ExceedingActiveBookingLimitException ex:
-                    error.Status = StatusCodes.Status409Conflict;
-                    error.Extensions["userId"] = ex.UserId;
-                    error.Extensions["bookingLimit"] = ex.BookingLimit;
+                    statusCode = StatusCodes.Status409Conflict;
+                    extensions["userId"] = ex.UserId;
+                    extensions["bookingLimit"] = ex.BookingLimit;
                     break;
 
                 case UserAlreadyExistsException ex:
-                    error.Status = StatusCodes.Status409Conflict;
-                    error.Extensions["login"] = ex.Login;
+                    statusCode = StatusCodes.Status409Conflict;
+                    extensions["login"] = ex.Login;
                     break;
 
                 default:
-                    error.Status = StatusCodes.Status500InternalServerError;
+                    statusCode = StatusCodes.Status500InternalServerError;
                     break;
             }
 
-            return error;
+            return (statusCode, extensions);
         }
     }
 }

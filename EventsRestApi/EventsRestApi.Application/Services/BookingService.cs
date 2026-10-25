@@ -117,7 +117,7 @@ namespace EventsRestApi.Application.Services
 
             if (user.Role != UserRole.Admin && bookingUserId != user.Id)
             {
-                throw new ForbiddenException(user.Id);
+                throw new ForbiddenException();
             }
         }
     }
