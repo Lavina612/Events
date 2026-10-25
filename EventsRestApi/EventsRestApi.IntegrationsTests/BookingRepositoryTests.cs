@@ -25,6 +25,12 @@ namespace EventsRestApi.IntegrationsTests
             /*---ARRANGE---*/
             await ResetDatabaseAsync();
 
+            var user = new User(
+                new Guid("A0000000-0000-0000-0000-000000000001"),
+                "User Login",
+                "Hashed Password",
+                UserRole.User);
+
             var @event = new Event(
                 new Guid("E0000000-0000-0000-0000-000000000001"),
                 "Event 1",
@@ -36,6 +42,7 @@ namespace EventsRestApi.IntegrationsTests
             var booking1 = new Booking(
                 new Guid("B0000000-0000-0000-0000-000000000001"),
                 @event.Id,
+                user.Id,
                 BookingStatus.Pending,
                 1,
                 fixedTime.UtcDateTime.AddHours(1));
@@ -43,11 +50,13 @@ namespace EventsRestApi.IntegrationsTests
             var booking2 = new Booking(
                 new Guid("B0000000-0000-0000-0000-000000000002"),
                 @event.Id,
+                user.Id,
                 BookingStatus.Pending,
                 1,
                 fixedTime.UtcDateTime.AddHours(2));
 
             await using var arrangeContext = CreateContext();
+            await arrangeContext.Users.AddAsync(user);
             await arrangeContext.Events.AddAsync(@event);
             await arrangeContext.Bookings.AddRangeAsync(booking1, booking2);
             await arrangeContext.SaveChangesAsync();
@@ -59,7 +68,9 @@ namespace EventsRestApi.IntegrationsTests
 
             /*---ASSERT---*/
             Assert.Equal(2, result.Count);
-            result.Should().BeEquivalentTo([booking1, booking2], options => options.Excluding(x => x.Event));
+            result.Should().BeEquivalentTo([booking1, booking2], options =>
+                options.Excluding(x => x.Event)
+                    .Excluding(x => x.User));
         }
 
         [Fact]
@@ -87,6 +98,12 @@ namespace EventsRestApi.IntegrationsTests
             /*---ARRANGE---*/
             await ResetDatabaseAsync();
 
+            var user = new User(
+                new Guid("A0000000-0000-0000-0000-000000000001"),
+                "User Login",
+                "Hashed Password",
+                UserRole.User);
+
             var @event = new Event(
                 new Guid("E0000000-0000-0000-0000-000000000001"),
                 "Event 1",
@@ -98,11 +115,13 @@ namespace EventsRestApi.IntegrationsTests
             var booking = new Booking(
                 new Guid("B0000000-0000-0000-0000-000000000001"),
                 @event.Id,
+                user.Id,
                 BookingStatus.Pending,
                 1,
                 fixedTime.UtcDateTime.AddHours(1));
 
             await using var arrangeContext = CreateContext();
+            await arrangeContext.Users.AddAsync(user);
             await arrangeContext.Events.AddAsync(@event);
             await arrangeContext.Bookings.AddAsync(booking);
             await arrangeContext.SaveChangesAsync();
@@ -114,7 +133,9 @@ namespace EventsRestApi.IntegrationsTests
 
             /*---ASSERT---*/
             Assert.NotNull(result);
-            result.Should().BeEquivalentTo(booking, options => options.Excluding(x => x.Event));
+            result.Should().BeEquivalentTo(booking, options =>
+                options.Excluding(x => x.Event)
+                    .Excluding(x => x.User));
         }
 
         [Fact]
@@ -142,6 +163,12 @@ namespace EventsRestApi.IntegrationsTests
             /*---ARRANGE---*/
             await ResetDatabaseAsync();
 
+            var user = new User(
+                new Guid("A0000000-0000-0000-0000-000000000001"),
+                "User Login",
+                "Hashed Password",
+                UserRole.User);
+
             var @event = new Event(
                 new Guid("E0000000-0000-0000-0000-000000000001"),
                 "Event 1",
@@ -153,6 +180,7 @@ namespace EventsRestApi.IntegrationsTests
             var booking1 = new Booking(
                 new Guid("B0000000-0000-0000-0000-000000000001"),
                 @event.Id,
+                user.Id,
                 BookingStatus.Confirmed,
                 1,
                 fixedTime.UtcDateTime.AddHours(1));
@@ -160,6 +188,7 @@ namespace EventsRestApi.IntegrationsTests
             var booking2 = new Booking(
                 new Guid("B0000000-0000-0000-0000-000000000002"),
                 @event.Id,
+                user.Id,
                 BookingStatus.Pending,
                 1,
                 fixedTime.UtcDateTime.AddHours(2));
@@ -167,6 +196,7 @@ namespace EventsRestApi.IntegrationsTests
             var booking3 = new Booking(
                 new Guid("B0000000-0000-0000-0000-000000000003"),
                 @event.Id,
+                user.Id,
                 BookingStatus.Pending,
                 1,
                 fixedTime.UtcDateTime.AddHours(3));
@@ -174,11 +204,13 @@ namespace EventsRestApi.IntegrationsTests
             var booking4 = new Booking(
                 new Guid("B0000000-0000-0000-0000-000000000004"),
                 @event.Id,
+                user.Id,
                 BookingStatus.Pending,
                 1,
                 fixedTime.UtcDateTime.AddHours(4));
 
             await using var arrangeContext = CreateContext();
+            await arrangeContext.Users.AddAsync(user);
             await arrangeContext.Events.AddAsync(@event);
             await arrangeContext.Bookings.AddRangeAsync(booking1, booking2, booking3, booking4);
             await arrangeContext.SaveChangesAsync();
@@ -221,6 +253,12 @@ namespace EventsRestApi.IntegrationsTests
 
             var requestedSeats = 1;
 
+            var user = new User(
+                new Guid("A0000000-0000-0000-0000-000000000001"),
+                "User Login",
+                "Hashed Password",
+                UserRole.User);
+
             var @event = new Event(
                 new Guid("E0000000-0000-0000-0000-000000000001"),
                 "Event 1",
@@ -232,18 +270,20 @@ namespace EventsRestApi.IntegrationsTests
             var expectedBooking = new Booking(
                 new Guid("B0000000-0000-0000-0000-000000000001"),
                 @event.Id,
+                user.Id,
                 BookingStatus.Pending,
                 requestedSeats,
                 fixedTime.UtcDateTime);
 
             await using var arrangeContext = CreateContext();
+            await arrangeContext.Users.AddAsync(user);
             await arrangeContext.Events.AddAsync(@event);
             await arrangeContext.SaveChangesAsync();
 
             /*---ACT---*/
             await using var actContext = CreateContext();
             var bookingRepository = new BookingRepository(actContext, _fakeTimeProvider);
-            var result = await bookingRepository.AddAsync(@event.Id, requestedSeats, CancellationToken.None);
+            var result = await bookingRepository.AddAsync(@event.Id, user.Id, requestedSeats, CancellationToken.None);
 
             /*---ASSERT---*/
             await using var assertContext = CreateContext();
@@ -262,12 +302,22 @@ namespace EventsRestApi.IntegrationsTests
             /*---ARRANGE---*/
             await ResetDatabaseAsync();
 
+            var user = new User(
+                new Guid("A0000000-0000-0000-0000-000000000001"),
+                "User Login",
+                "Hashed Password",
+                UserRole.User);
+
+            await using var arrangeContext = CreateContext();
+            await arrangeContext.Users.AddAsync(user);
+            await arrangeContext.SaveChangesAsync();
+
             /*---ACT & ASSERT---*/
             await using var actContext = CreateContext();
             var bookingRepository = new BookingRepository(actContext, _fakeTimeProvider);
 
             await Assert.ThrowsAsync<DbUpdateException>(async () =>
-                await bookingRepository.AddAsync(Guid.Empty, 1, CancellationToken.None));
+                await bookingRepository.AddAsync(Guid.Empty, user.Id, 1, CancellationToken.None));
         }
 
         #endregion
@@ -280,6 +330,12 @@ namespace EventsRestApi.IntegrationsTests
             /*---ARRANGE---*/
             await ResetDatabaseAsync();
 
+            var user = new User(
+                new Guid("A0000000-0000-0000-0000-000000000001"),
+                "User Login",
+                "Hashed Password",
+                UserRole.User);
+
             var @event = new Event(
                 new Guid("E0000000-0000-0000-0000-000000000001"),
                 "Event 1",
@@ -291,11 +347,13 @@ namespace EventsRestApi.IntegrationsTests
             var booking = new Booking(
                 Guid.Empty,
                 @event.Id,
+                user.Id,
                 BookingStatus.Pending,
                 1,
                 fixedTime.UtcDateTime.AddHours(1));
 
             await using var arrangeContext = CreateContext();
+            await arrangeContext.Users.AddAsync(user);
             await arrangeContext.Events.AddAsync(@event);
             await arrangeContext.SaveChangesAsync();
 
@@ -314,6 +372,12 @@ namespace EventsRestApi.IntegrationsTests
             /*---ARRANGE---*/
             await ResetDatabaseAsync();
 
+            var user = new User(
+                new Guid("A0000000-0000-0000-0000-000000000001"),
+                "User Login",
+                "Hashed Password",
+                UserRole.User);
+
             var @event = new Event(
                 new Guid("E0000000-0000-0000-0000-000000000001"),
                 "Event 1",
@@ -325,6 +389,7 @@ namespace EventsRestApi.IntegrationsTests
             var booking = new Booking(
                 new Guid("B0000000-0000-0000-0000-000000000001"),
                 @event.Id,
+                user.Id,
                 BookingStatus.Pending,
                 1,
                 fixedTime.UtcDateTime.AddHours(1));
@@ -332,11 +397,13 @@ namespace EventsRestApi.IntegrationsTests
             var newBooking = new Booking(
                 booking.Id,
                 booking.EventId,
+                user.Id,
                 BookingStatus.Confirmed,
                 booking.BookedSeats + 1,
                 fixedTime.UtcDateTime.AddHours(2));
 
             await using var arrangeContext = CreateContext();
+            await arrangeContext.Users.AddAsync(user);
             await arrangeContext.Events.AddAsync(@event);
             await arrangeContext.Bookings.AddAsync(booking);
             await arrangeContext.SaveChangesAsync();
@@ -358,7 +425,8 @@ namespace EventsRestApi.IntegrationsTests
             updatedBooking.Should().BeEquivalentTo(booking, options => options
                 .Excluding(x => x.Status)
                 .Excluding(x => x.ProcessedAt)
-                .Excluding(x => x.Event));
+                .Excluding(x => x.Event)
+                .Excluding(x => x.User));
         }
 
         #endregion
@@ -386,6 +454,12 @@ namespace EventsRestApi.IntegrationsTests
             /*---ARRANGE---*/
             await ResetDatabaseAsync();
 
+            var user = new User(
+                new Guid("A0000000-0000-0000-0000-000000000001"),
+                "User Login",
+                "Hashed Password",
+                UserRole.User);
+
             var @event = new Event(
                 new Guid("E0000000-0000-0000-0000-000000000001"),
                 "Event 1",
@@ -397,11 +471,13 @@ namespace EventsRestApi.IntegrationsTests
             var booking = new Booking(
                 new Guid("B0000000-0000-0000-0000-000000000001"),
                 @event.Id,
+                user.Id,
                 BookingStatus.Pending,
                 1,
                 fixedTime.UtcDateTime.AddHours(1));
 
             await using var arrangeContext = CreateContext();
+            await arrangeContext.Users.AddAsync(user);
             await arrangeContext.Events.AddAsync(@event);
             await arrangeContext.Bookings.AddAsync(booking);
             await arrangeContext.SaveChangesAsync();
@@ -429,6 +505,12 @@ namespace EventsRestApi.IntegrationsTests
             /*---ARRANGE---*/
             await ResetDatabaseAsync();
 
+            var user = new User(
+                new Guid("A0000000-0000-0000-0000-000000000001"),
+                "User Login",
+                "Hashed Password",
+                UserRole.User);
+
             var @event = new Event(
                 new Guid("E0000000-0000-0000-0000-000000000001"),
                 "Event 1",
@@ -440,11 +522,13 @@ namespace EventsRestApi.IntegrationsTests
             var booking = new Booking(
                 new Guid("B0000000-0000-0000-0000-000000000001"),
                 @event.Id,
+                user.Id,
                 BookingStatus.Pending,
                 1,
                 fixedTime.UtcDateTime);
 
             await using var context = CreateContext();
+            await context.Users.AddAsync(user);
             await context.Events.AddAsync(@event);
             await context.Bookings.AddAsync(booking);
 
@@ -458,7 +542,9 @@ namespace EventsRestApi.IntegrationsTests
 
             Assert.NotNull(foundBooking);
 
-            foundBooking.Should().BeEquivalentTo(booking, options => options.Excluding(x => x.Event));
+            foundBooking.Should().BeEquivalentTo(booking, options =>
+                options.Excluding(x => x.Event)
+                    .Excluding(x => x.User));
         }
 
         #endregion

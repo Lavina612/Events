@@ -72,9 +72,14 @@
             _availableSeats = totalSeats;
         }
 
-        public bool IsStillActual(DateTime currentUtcNow)
+        public bool IsStarted(DateTime currentUtcNow)
         {
-            return EndAt > currentUtcNow;
+            return StartAt < currentUtcNow;
+        }
+
+        public bool IsFinished(DateTime currentUtcNow)
+        {
+            return EndAt < currentUtcNow;
         }
 
         public bool TryReserveSeats(int count = 1)

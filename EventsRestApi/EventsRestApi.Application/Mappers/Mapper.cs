@@ -39,9 +39,18 @@ namespace EventsRestApi.Application.Mappers
             return new BookingResponseDto(
                 booking.Id,
                 booking.EventId,
+                booking.UserId,
                 booking.Status,
                 booking.CreatedAt,
                 booking.ProcessedAt);
+        }
+
+        public static UserResponseDto MapToUserResponseDto(User user)
+        {
+            return new UserResponseDto(
+                user.Id,
+                user.Login,
+                user.Role);
         }
     }
 }

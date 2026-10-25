@@ -1,4 +1,4 @@
-﻿using EventsRestApi.Application.RepositoryInterfaces;
+﻿using EventsRestApi.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Application.Services.Interfaces;
 using EventsRestApi.Application.Settings;
 using EventsRestApi.Domain.Models.Entities;
@@ -107,7 +107,7 @@ namespace EventsRestApi.Application.Services
                     await bookingRepository.SaveContextAsync(cancellationToken);
 
                     _logger.LogWarning(
-                        "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: события с Id: {EventId} не существует.",
+                        "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: событие с Id: {EventId} не существует.",
                         booking.ProcessedAt,
                         booking.Id,
                         booking.EventId);
@@ -115,14 +115,31 @@ namespace EventsRestApi.Application.Services
                     return true;
                 }
 
-                if (!foundEvent.IsStillActual(_timeProvider.GetUtcNow().UtcDateTime))
+                if (foundEvent.IsFinished(_timeProvider.GetUtcNow().UtcDateTime))
                 {
                     booking.Reject(_timeProvider.GetUtcNow().UtcDateTime);
                     foundEvent.ReleaseSeats(booking.BookedSeats);
                     await bookingRepository.SaveContextAsync(cancellationToken);
 
                     _logger.LogWarning(
-                        "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: события с Id: {EventId} уже завершилось. " +
+                        "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: событие с Id: {EventId} уже завершилось. " +
+                        "Количество доступных мест обратно увеличено на {BookedSeats}",
+                        booking.ProcessedAt,
+                        booking.Id,
+                        booking.EventId,
+                        booking.BookedSeats);
+
+                    return true;
+                }
+
+                if (foundEvent.IsStarted(_timeProvider.GetUtcNow().UtcDateTime))
+                {
+                    booking.Reject(_timeProvider.GetUtcNow().UtcDateTime);
+                    foundEvent.ReleaseSeats(booking.BookedSeats);
+                    await bookingRepository.SaveContextAsync(cancellationToken);
+
+                    _logger.LogWarning(
+                        "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: событие с Id: {EventId} уже началось. " +
                         "Количество доступных мест обратно увеличено на {BookedSeats}",
                         booking.ProcessedAt,
                         booking.Id,

@@ -45,11 +45,6 @@ namespace EventsRestApi.Infrastructure.Data.Configurations
             builder
                 .Property(e => e.AvailableSeats)
                 .HasField("_availableSeats");
-
-            builder
-                .HasMany(e => e.Bookings)
-                .WithOne(b => b.Event)
-                .HasForeignKey(b => b.EventId);
         }
     }
 }

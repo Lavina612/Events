@@ -1,4 +1,4 @@
-﻿using EventsRestApi.Application.RepositoryInterfaces;
+﻿using EventsRestApi.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Application.Services;
 using EventsRestApi.Application.Services.Interfaces;
 using EventsRestApi.Domain.Models;
@@ -168,7 +168,11 @@ namespace EventsRestApi.Tests
         public async Task AddAsync_CancelBeforeStart_ThrowOperationCancelledException()
         {
             /*---ARRANGE---*/
-            var @event = new Event(Guid.Empty, string.Empty, string.Empty, DateTime.UtcNow, DateTime.UtcNow, 1);
+            //Дата startAt высчитывается относительно fixedTime: 2026.06.05 09:05:05
+            var startAt = fixedTime.UtcDateTime;
+            var endAt = startAt.AddDays(5);
+
+            var @event = new Event(Guid.Empty, string.Empty, string.Empty, startAt, endAt, 1);
 
             using var cts = new CancellationTokenSource();
             cts.Cancel();
@@ -234,7 +238,11 @@ namespace EventsRestApi.Tests
         public async Task UpdateAsync_CancelBeforeStart_ThrowOperationCancelledException()
         {
             /*---ARRANGE---*/
-            var @event = new Event(Guid.Empty, string.Empty, string.Empty, DateTime.UtcNow, DateTime.UtcNow, 1);
+            //Дата startAt высчитывается относительно fixedTime: 2026.06.05 09:05:05
+            var startAt = fixedTime.UtcDateTime;
+            var endAt = startAt.AddDays(5);
+
+            var @event = new Event(Guid.Empty, string.Empty, string.Empty, startAt, endAt, 1);
 
             using var cts = new CancellationTokenSource();
             cts.Cancel();

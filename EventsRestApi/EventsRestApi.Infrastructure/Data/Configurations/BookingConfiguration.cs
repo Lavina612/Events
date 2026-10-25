@@ -27,6 +27,11 @@ namespace EventsRestApi.Infrastructure.Data.Configurations
                 .HasOne(b => b.Event)
                 .WithMany(e => e.Bookings)
                 .HasForeignKey(b => b.EventId);
+
+            builder
+                .HasOne(b => b.User)
+                .WithMany(u => u.Bookings)
+                .HasForeignKey(b => b.UserId);
         }
     }
 }
