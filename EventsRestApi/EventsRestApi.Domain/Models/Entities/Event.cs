@@ -48,9 +48,12 @@
             }
         }
 
-        public List<Booking> Bookings { get; private set; } = null!;
+        public List<Booking> Bookings { get; private set; } = new ();
 
-        private Event() { Title = null!; }
+        private Event() 
+        { 
+            Title = null!; 
+        }
 
         public Event(
             Guid id,
@@ -59,6 +62,7 @@
             DateTime startAt,
             DateTime endAt,
             int totalSeats)
+            : this()
         {
             Id = id;
 

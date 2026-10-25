@@ -11,13 +11,6 @@ namespace EventsRestApi.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<Guid>(
-                name: "user_id",
-                table: "bookings",
-                type: "uuid",
-                nullable: false,
-                defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
-
             migrationBuilder.CreateTable(
                 name: "users",
                 columns: table => new
@@ -33,32 +26,35 @@ namespace EventsRestApi.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "ix_bookings_user_id",
-                table: "bookings",
-                column: "user_id");
-
-            migrationBuilder.CreateIndex(
                 name: "ix_users_login",
                 table: "users",
                 column: "login",
                 unique: true);
 
-            migrationBuilder.AddForeignKey(
-                name: "fk_bookings_users_user_id",
+            migrationBuilder.AddColumn<Guid>(
+                name: "user_id",
                 table: "bookings",
-                column: "user_id",
-                principalTable: "users",
-                principalColumn: "id",
-                onDelete: ReferentialAction.Cascade);
+                type: "uuid",
+                nullable: true);
+
+            var migrationUserId = Guid.NewGuid();
+
+            migrationBuilder.InsertData(
+                table: "users",
+                columns: new[] { "id", "login", "hashed_password", "role" },
+                values: new object[] { migrationUserId, "legacy_migration_user", "no_password_system_account", "User" });
+
+            migrationBuilder.Sql($"UPDATE bookings SET user_id = '{migrationUserId}' WHERE user_id IS NULL;");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_bookings_user_id",
+                table: "bookings",
+                column: "user_id");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "fk_bookings_users_user_id",
-                table: "bookings");
-
             migrationBuilder.DropTable(
                 name: "users");
 

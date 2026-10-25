@@ -20,7 +20,11 @@
 
         public DateTime? ProcessedAt { get; private set; }
 
-        private Booking() { Event = null!; }
+        private Booking() 
+        { 
+            Event = null!; 
+            User = null!; 
+        }
 
         public Booking(
             Guid id,
@@ -29,6 +33,7 @@
             BookingStatus status,
             int bookedSeats,
             DateTime createdAt)
+            : this()
         {
             Id = id;
 

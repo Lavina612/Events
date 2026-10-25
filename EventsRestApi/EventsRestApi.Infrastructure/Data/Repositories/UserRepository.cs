@@ -1,6 +1,8 @@
-﻿using EventsRestApi.Application.InterfacesForInfrastructure.Repositories;
+﻿using EventsRestApi.Application.Exceptions;
+using EventsRestApi.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Domain.Models.Entities;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace EventsRestApi.Infrastructure.Data.Repositories
 {
@@ -31,10 +33,17 @@ namespace EventsRestApi.Infrastructure.Data.Repositories
                 hashedPassword,
                 role);
 
-            await _context.Users.AddAsync(user, cancellationToken);
-            await _context.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await _context.Users.AddAsync(user, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
 
-            return user;
+                return user;
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505") // ошибка нарушения unique
+            {
+                throw new UserAlreadyExistsException(login, ex);
+            }
         }
 
         public async Task<int> GetActiveBookingsCountAsync(Guid id, CancellationToken cancellationToken)

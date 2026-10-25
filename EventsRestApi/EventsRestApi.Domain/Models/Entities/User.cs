@@ -4,21 +4,26 @@
     {
         public Guid Id { get; }
 
-        public string Login { get; set; }
+        public string Login { get; private set; }
 
-        public string HashedPassword { get; set; }
+        public string HashedPassword { get; private set; }
 
-        public UserRole Role { get; set; }
+        public UserRole Role { get; private set; }
 
-        public List<Booking> Bookings { get; private set; }
+        public List<Booking> Bookings { get; private set; } = new();
 
-        public User() { }
+        private User() 
+        {
+            Login = null!;
+            HashedPassword = null!;
+        }
 
         public User(
             Guid id,
             string login,
             string hashPassword,
             UserRole role)
+            : this()
         {
             Id = id;
             Login = login;

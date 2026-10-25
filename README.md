@@ -237,7 +237,7 @@
 | **POST** | `/events` | 🔐 Admin | Создать новое мероприятие.<br>Параметры (Body): `EventRequestDto` | `201 Created` | `401`, `403`, `500` |
 | **PUT** | `/events/{id}` | 🔐 Admin | Обновить данные существующего мероприятия по его `id` | `204 NoContent` | `400`, `401`, `403`, `404`, `500` |
 | **DELETE**| `/events/{id}` | 🔐 Admin | Удалить мероприятие по его `id` | `204 NoContent` | `401`, `403`, `404`, `500` |
-| **POST** | `/events/{eventId}/book` | 🔑 User / Admin | Создать бронирование на мероприятие.<br>Параметры (Query): `requestedSeats` (мин: 1) | `202 Accepted` | `400`, `401`, `404`, `409`, `500` |
+| **POST** | `/events/{eventId}/book` | 🔑 User / Admin | Создать бронирование на мероприятие.<br>Параметры (Query): `requestedSeats` (мин: 1) | `201 Accepted` | `400`, `401`, `404`, `409`, `500` |
 
 #### 🎟️ Bookings API (`BookingsController`)
 *Просмотр и управление бронированиями авторизованного пользователя.*

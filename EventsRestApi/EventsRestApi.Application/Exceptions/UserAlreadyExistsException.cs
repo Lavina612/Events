@@ -9,5 +9,11 @@
         {
             Login = login;
         }
+
+        public UserAlreadyExistsException(string login, Exception innerException)
+            : base($"Пользователь с логином '{login}' уже существует.", innerException)
+        {
+            Login = login;
+        }
     }
 }
