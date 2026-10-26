@@ -1,6 +1,9 @@
-﻿using EventsRestApi.Services.BookingService.Application.InterfacesForInfrastructure.Repositories;
+﻿using EventsRestApi.Services.BookingService.Application.InterfacesForInfrastructure.MessageBroker;
+using EventsRestApi.Services.BookingService.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Services.BookingService.Application.Settings;
 using EventsRestApi.Services.BookingService.Domain.Models.Entities;
+using EventsRestApi.Services.SharedContracts.Events;
+using EventsRestApi.Services.SharedContracts.Topics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -75,7 +78,6 @@ namespace EventsRestApi.Services.BookingService.Application.Services
             _logger.LogInformation("{ServiceName} остановлен.", nameof(BookingBackgroundService));
         }
 
-        //TODO: Всё, что касается непосредственно события, должно быть именно в микросервисе Events, а не здесь
         private async Task<bool> ProcessBookingAsync(Guid bookingId, CancellationToken cancellationToken)
         {
             await Task.Delay(TimeSpan.FromSeconds(2), _timeProvider, cancellationToken);
@@ -84,12 +86,10 @@ namespace EventsRestApi.Services.BookingService.Application.Services
 
             using var scope = _scopeFactory.CreateScope();
             IBookingRepository? bookingRepository = null;
-            //Event? foundEvent = null;
             Booking? booking = null;
 
             try
             {
-                //var eventService = scope.ServiceProvider.GetRequiredService<IEventService>();
                 bookingRepository = scope.ServiceProvider.GetRequiredService<IBookingRepository>();
 
                 booking = await bookingRepository.GetByIdAsync(bookingId, cancellationToken);
@@ -99,73 +99,31 @@ namespace EventsRestApi.Services.BookingService.Application.Services
                     return false;
                 }
 
-                //foundEvent = await eventService.GetByIdAsync(booking.EventId, cancellationToken);
-
-                //if (foundEvent == null)
-                //{
-                //    //TODO: NotFoundResourceException теперь выбрасывается внутри GetByIdAsync
-                //    booking.Reject(_timeProvider.GetUtcNow().UtcDateTime);
-                //    await bookingRepository.SaveContextAsync(cancellationToken);
-
-                //    _logger.LogWarning(
-                //        "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: событие с Id: {EventId} не существует.",
-                //        booking.ProcessedAt,
-                //        booking.Id,
-                //        booking.EventId);
-
-                //    return true;
-                //}
-
-                //if (foundEvent.IsFinished(_timeProvider.GetUtcNow().UtcDateTime))
-                //{
-                //    //TODO: FinishedEventException
-                //    booking.Reject(_timeProvider.GetUtcNow().UtcDateTime);
-                //    foundEvent.ReleaseSeats(booking.BookedSeats);
-                //    await bookingRepository.SaveContextAsync(cancellationToken);
-
-                //    _logger.LogWarning(
-                //        "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: событие с Id: {EventId} уже завершилось. " +
-                //        "Количество доступных мест обратно увеличено на {BookedSeats}",
-                //        booking.ProcessedAt,
-                //        booking.Id,
-                //        booking.EventId,
-                //        booking.BookedSeats);
-
-                //    return true;
-                //}
-
-                //if (foundEvent.IsStarted(_timeProvider.GetUtcNow().UtcDateTime))
-                //{
-                //    //TODO: StartedEventException
-                //    booking.Reject(_timeProvider.GetUtcNow().UtcDateTime);
-                //    foundEvent.ReleaseSeats(booking.BookedSeats);
-                //    await bookingRepository.SaveContextAsync(cancellationToken);
-
-                //    _logger.LogWarning(
-                //        "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: событие с Id: {EventId} уже началось. " +
-                //        "Количество доступных мест обратно увеличено на {BookedSeats}",
-                //        booking.ProcessedAt,
-                //        booking.Id,
-                //        booking.EventId,
-                //        booking.BookedSeats);
-
-                //    return true;
-                //}
-
-                ////TODO:
-                ////if (!foundEvent.TryReserveSeats(requestedSeats))
-                ////{
-                ////    throw new NoAvailableSeatsException(eventId, requestedSeats, foundEvent.AvailableSeats);
-                ////}
-
                 booking.Confirm(_timeProvider.GetUtcNow().UtcDateTime);
                 await bookingRepository.SaveContextAsync(cancellationToken);
 
                 _logger.LogInformation(
-                    "{ProcessedAt}: Бронирование с Id: {BookingId} обработано: {Status}.",
+                    "{ProcessedAt}: Бронирование с Id: {BookingId} сохранено в БД, статус: {Status}.",
                     booking.ProcessedAt,
                     booking.Id,
                     booking.Status);
+
+                var bookingConfirmedEvent = new BookingConfirmedEvent(
+                    booking.Id,
+                    booking.EventId,
+                    booking.UserId,
+                    booking.BookedSeats,
+                    _timeProvider.GetUtcNow().DateTime
+                );
+
+                var eventPublisher = scope.ServiceProvider.GetRequiredService<IEventPublisher>();
+
+                await eventPublisher.PublishAsync(
+                    BookingTopics.BookingConfirmed,
+                    booking.EventId.ToString(),
+                    bookingConfirmedEvent,
+                    cancellationToken
+                );
 
                 return true;
             }
@@ -201,11 +159,6 @@ namespace EventsRestApi.Services.BookingService.Application.Services
 
                 try
                 {
-                    //if (foundEvent != null)
-                    //{
-                    //    foundEvent.ReleaseSeats(booking.BookedSeats);
-                    //}
-
                     booking.Reject(_timeProvider.GetUtcNow().UtcDateTime);
                     await bookingRepository!.SaveContextAsync(cancellationToken);
 
@@ -214,6 +167,24 @@ namespace EventsRestApi.Services.BookingService.Application.Services
                         "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: неизвестная ошибка.",
                         booking.ProcessedAt,
                         booking.Id);
+
+                    var bookingRejectedEvent = new BookingRejectedEvent(
+                                booking.Id,
+                                booking.EventId,
+                                booking.UserId,
+                                booking.BookedSeats,
+                                $"UnknownError: {ex.Message}",
+                                _timeProvider.GetUtcNow().DateTime
+                            );
+
+                    var eventPublisher = scope.ServiceProvider.GetRequiredService<IEventPublisher>();
+
+                    await eventPublisher.PublishAsync(
+                        BookingTopics.BookingRejected,
+                        booking.EventId.ToString(),
+                        bookingRejectedEvent,
+                        cancellationToken
+                    );
 
                     return true;
                 }

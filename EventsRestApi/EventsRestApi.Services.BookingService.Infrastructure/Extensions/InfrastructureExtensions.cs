@@ -1,6 +1,8 @@
-﻿using EventsRestApi.Services.BookingService.Application.InterfacesForInfrastructure.Repositories;
+﻿using EventsRestApi.Services.BookingService.Application.InterfacesForInfrastructure.MessageBroker;
+using EventsRestApi.Services.BookingService.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Services.BookingService.Infrastructure.Data;
 using EventsRestApi.Services.BookingService.Infrastructure.Data.Repositories;
+using EventsRestApi.Services.BookingService.Infrastructure.MessageBroker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +20,8 @@ namespace EventsRestApi.Services.BookingService.Infrastructure.Extensions
                     .UseSnakeCaseNamingConvention());
 
             services.AddScoped<IBookingRepository, BookingRepository>();
+
+            services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
 
             return services;
         }

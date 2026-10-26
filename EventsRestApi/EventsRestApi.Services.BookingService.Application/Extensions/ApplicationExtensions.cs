@@ -13,7 +13,6 @@ namespace EventsRestApi.Services.BookingService.Application.Extensions
             services.Configure<BookingBackgroundServiceSettings>(configuration.GetSection(BookingBackgroundServiceSettings.SectionName));
             services.Configure<BookingSettings>(configuration.GetSection(BookingSettings.SectionName));
 
-
             services.AddHostedService<BookingBackgroundService>();
 
             services.AddScoped<IBookingService, Services.BookingService>();
