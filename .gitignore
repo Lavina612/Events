@@ -42,6 +42,7 @@ ScaffoldingReadMe.txt
 CodeCoverage/
 .vs/
 *.csproj.user
+*.slnLaunch.user
 *.suo
 *.DotSettings.user
 
