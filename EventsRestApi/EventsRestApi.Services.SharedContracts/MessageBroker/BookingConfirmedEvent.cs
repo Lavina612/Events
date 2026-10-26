@@ -1,4 +1,4 @@
-﻿namespace EventsRestApi.Services.SharedContracts.Events
+﻿namespace EventsRestApi.Services.SharedContracts.MessageBroker
 {
     public record BookingConfirmedEvent(
         Guid BookingId,

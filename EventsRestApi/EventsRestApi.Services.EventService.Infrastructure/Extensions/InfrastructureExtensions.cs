@@ -1,6 +1,7 @@
 ﻿using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Services.EventService.Infrastructure.Data;
 using EventsRestApi.Services.EventService.Infrastructure.Data.Repositories;
+using EventsRestApi.Services.EventService.Infrastructure.MessageBroker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +17,9 @@ namespace EventsRestApi.Services.EventService.Infrastructure.Extensions
                 options
                     .UseNpgsql(configuration.GetConnectionString("Default"))
                     .UseSnakeCaseNamingConvention());
+
+            services.AddHostedService<KafkaInitializerHost>();
+            services.AddHostedService<BookingConfirmedConsumer>();
 
             services.AddScoped<IEventRepository, EventRepository>();
 

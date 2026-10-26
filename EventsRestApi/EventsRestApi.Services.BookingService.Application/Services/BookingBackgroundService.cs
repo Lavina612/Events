@@ -2,8 +2,7 @@
 using EventsRestApi.Services.BookingService.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Services.BookingService.Application.Settings;
 using EventsRestApi.Services.BookingService.Domain.Models.Entities;
-using EventsRestApi.Services.SharedContracts.Events;
-using EventsRestApi.Services.SharedContracts.Topics;
+using EventsRestApi.Services.SharedContracts.MessageBroker;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -167,24 +166,6 @@ namespace EventsRestApi.Services.BookingService.Application.Services
                         "{ProcessedAt}: Бронирование с Id: {BookingId} отклонено: неизвестная ошибка.",
                         booking.ProcessedAt,
                         booking.Id);
-
-                    var bookingRejectedEvent = new BookingRejectedEvent(
-                                booking.Id,
-                                booking.EventId,
-                                booking.UserId,
-                                booking.BookedSeats,
-                                $"UnknownError: {ex.Message}",
-                                _timeProvider.GetUtcNow().DateTime
-                            );
-
-                    var eventPublisher = scope.ServiceProvider.GetRequiredService<IEventPublisher>();
-
-                    await eventPublisher.PublishAsync(
-                        BookingTopics.BookingRejected,
-                        booking.EventId.ToString(),
-                        bookingRejectedEvent,
-                        cancellationToken
-                    );
 
                     return true;
                 }

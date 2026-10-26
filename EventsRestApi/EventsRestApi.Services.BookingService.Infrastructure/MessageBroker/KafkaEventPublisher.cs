@@ -10,7 +10,7 @@ using System.Text.Json;
 
 namespace EventsRestApi.Services.BookingService.Infrastructure.MessageBroker
 {
-    public sealed class KafkaEventPublisher : IEventPublisher, IDisposable
+    public class KafkaEventPublisher : IEventPublisher, IDisposable
     {
         private readonly IProducer<string, string> _producer;
 
