@@ -37,7 +37,7 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
 
             using var adminClient = new AdminClientBuilder(config).Build();
 
-            var topics = new[] { BookingTopics.BookingConfirmed };
+            var topics = new[] { BookingTopics.BookingConfirmed, BookingTopics.BookingCancelled };
 
             foreach (var topic in topics)
             {

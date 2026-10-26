@@ -19,7 +19,7 @@ namespace EventsRestApi.Services.EventService.Infrastructure.Extensions
                     .UseSnakeCaseNamingConvention());
 
             services.AddHostedService<KafkaInitializerHost>();
-            services.AddHostedService<BookingConfirmedConsumer>();
+            services.AddHostedService<BookingEventConsumer>();
 
             services.AddScoped<IEventRepository, EventRepository>();
 

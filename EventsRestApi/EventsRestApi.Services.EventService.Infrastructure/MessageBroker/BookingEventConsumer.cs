@@ -9,20 +9,20 @@ using System.Text.Json;
 
 namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
 {
-    public class BookingConfirmedConsumer : BackgroundService
+    public class BookingEventConsumer : BackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
 
-        private readonly ILogger<BookingConfirmedConsumer> _logger;
+        private readonly ILogger<BookingEventConsumer> _logger;
 
         private readonly TimeProvider _timeProvider;
 
         private readonly ConsumerConfig _consumerConfig;
 
-        public BookingConfirmedConsumer(
+        public BookingEventConsumer(
             IConfiguration configuration,
             IServiceScopeFactory scopeFactory,
-            ILogger<BookingConfirmedConsumer> logger,
+            ILogger<BookingEventConsumer> logger,
             TimeProvider timeProvider)
         {
             _scopeFactory = scopeFactory;
@@ -60,11 +60,12 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
         private void StartConsumerLoop(CancellationToken stoppingToken)
         {
             using var consumer = new ConsumerBuilder<string, string>(_consumerConfig).Build();
-            consumer.Subscribe(BookingTopics.BookingConfirmed);
+            consumer.Subscribe(new[] { BookingTopics.BookingConfirmed, BookingTopics.BookingCancelled });
 
             _logger.LogInformation(
-                "Подписчик Kafka на топик '{Topic}' успешно запущен.", 
-                BookingTopics.BookingConfirmed);
+                "Подписчик Kafka запущен на топики: '{Confirmed}', '{Cancelled}'",
+                BookingTopics.BookingConfirmed,
+                BookingTopics.BookingCancelled);
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -72,16 +73,37 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
                 {
                     var consumeResult = consumer.Consume(stoppingToken);
 
-                    if (consumeResult == null) 
-                    { 
+                    if (consumeResult == null)
+                    {
                         continue;
                     }
 
-                    var success = ProcessMessageWithScope(consumeResult.Message.Value, stoppingToken)
-                        .GetAwaiter()
-                        .GetResult();
+                    bool isProcessedSuccessfully;
 
-                    consumer.Commit(consumeResult);
+                    // Маршрутизация в зависимости от того, из какого топика пришло сообщение
+                    if (consumeResult.Topic == BookingTopics.BookingConfirmed)
+                    {
+                        isProcessedSuccessfully = ProcessConfirmationWithScope(consumeResult.Message.Value, stoppingToken)
+                            .GetAwaiter().GetResult();
+                    }
+                    else if (consumeResult.Topic == BookingTopics.BookingCancelled)
+                    {
+                        isProcessedSuccessfully = ProcessCancellationWithScope(consumeResult.Message.Value, stoppingToken)
+                            .GetAwaiter().GetResult();
+                    }
+                    else
+                    {
+                        _logger.LogWarning(
+                            "Получено сообщение из неизвестного топика: {Topic}",
+                            consumeResult.Topic);
+
+                        isProcessedSuccessfully = true;
+                    }
+
+                    if (isProcessedSuccessfully)
+                    {
+                        consumer.Commit(consumeResult);
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -90,7 +112,7 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
                 catch (Exception ex)
                 {
                     _logger.LogError(
-                        ex, 
+                        ex,
                         "Непредвиденная ошибка в цикле обработки Kafka-сообщений.");
 
                     Thread.Sleep(2000);
@@ -100,10 +122,9 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
             consumer.Close();
         }
 
-        private async Task<bool> ProcessMessageWithScope(string rawJson, CancellationToken cancellationToken)
+        private async Task<bool> ProcessConfirmationWithScope(string rawJson, CancellationToken cancellationToken)
         {
             using var scope = _scopeFactory.CreateScope();
-
             var eventRepository = scope.ServiceProvider.GetRequiredService<IEventRepository>();
 
             BookingConfirmedEvent? bookingConfirmedEvent;
@@ -119,9 +140,10 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
             catch (JsonException ex)
             {
                 _logger.LogError(
-                    ex, 
-                    "Не удалось десериализовать сообщение: {RawJson}", 
+                    ex,
+                    "Не удалось десериализовать сообщение: {RawJson}",
                     rawJson);
+
                 return true;
             }
 
@@ -197,6 +219,72 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
                     _timeProvider.GetUtcNow().UtcDateTime,
                     bookingConfirmedEvent.BookingId,
                     bookingConfirmedEvent.EventId);
+
+                return false;
+            }
+        }
+
+        private async Task<bool> ProcessCancellationWithScope(string rawJson, CancellationToken cancellationToken)
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var eventRepository = scope.ServiceProvider.GetRequiredService<IEventRepository>();
+
+            BookingCancelledEvent? bookingCancelledEvent;
+            try
+            {
+                bookingCancelledEvent = JsonSerializer.Deserialize<BookingCancelledEvent>(rawJson);
+
+                if (bookingCancelledEvent == null)
+                {
+                    return true;
+                }
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Не удалось десериализовать сообщение: {RawJson}",
+                    rawJson);
+
+                return true;
+            }
+
+            try
+            {
+                var foundEvent = await eventRepository.GetByIdAsync(bookingCancelledEvent.EventId, cancellationToken);
+
+                if (foundEvent == null)
+                {
+                    _logger.LogWarning(
+                        @"{ProcessedAt}: Невозможно вернуть места на событие после отмены бронирования с Id: {BookingId}: 
+                            событие с Id: {EventId} не существует.",
+                        _timeProvider.GetUtcNow().UtcDateTime,
+                        bookingCancelledEvent.BookingId,
+                        bookingCancelledEvent.EventId);
+
+                    return true;
+                }
+
+                foundEvent.ReleaseSeats(bookingCancelledEvent.BookedSeats);
+                await eventRepository.SaveContextAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    @"{ProcessedAt}: После отмены бронирования с Id: {BookingId} на событие с Id: {EventId} возвращено {BookedSeats} мест.",
+                    _timeProvider.GetUtcNow().UtcDateTime,
+                    bookingCancelledEvent.BookingId,
+                    bookingCancelledEvent.EventId,
+                    bookingCancelledEvent.BookedSeats);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "{ProcessedAt}: Непредвиденная ошибка в процессе отмены бронирования с Id: {BookingId} на событие с Id: {EventId}",
+                    _timeProvider.GetUtcNow().UtcDateTime,
+                    bookingCancelledEvent.BookingId,
+                    bookingCancelledEvent.EventId);
 
                 return false;
             }

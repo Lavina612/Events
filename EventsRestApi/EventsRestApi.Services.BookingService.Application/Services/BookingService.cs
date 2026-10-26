@@ -1,9 +1,11 @@
-﻿using EventsRestApi.Services.BookingService.Application.InterfacesForInfrastructure.Repositories;
+﻿using EventsRestApi.Services.BookingService.Application.InterfacesForInfrastructure.MessageBroker;
+using EventsRestApi.Services.BookingService.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Services.BookingService.Application.Services.Interfaces;
 using EventsRestApi.Services.BookingService.Application.Settings;
 using EventsRestApi.Services.BookingService.Domain.Exceptions;
 using EventsRestApi.Services.BookingService.Domain.Models.Entities;
 using EventsRestApi.Services.SharedContracts.Exceptions;
+using EventsRestApi.Services.SharedContracts.MessageBroker;
 using EventsRestApi.Services.SharedContracts.Models;
 using Microsoft.Extensions.Options;
 
@@ -15,16 +17,20 @@ namespace EventsRestApi.Services.BookingService.Application.Services
 
         private readonly IBookingRepository _bookingRepository;
 
+        private readonly IEventPublisher _eventPublisher;
+
         private readonly BookingSettings _bookingSettings;
 
         private readonly TimeProvider _timeProvider;
 
         public BookingService(
             IBookingRepository bookingRepository,
+            IEventPublisher eventPublisher,
             IOptions<BookingSettings> bookingSettings,
             TimeProvider timeProvider)
         {
             _bookingRepository = bookingRepository;
+            _eventPublisher = eventPublisher;
             _bookingSettings = bookingSettings.Value;
             _timeProvider = timeProvider;
         }
@@ -85,17 +91,22 @@ namespace EventsRestApi.Services.BookingService.Application.Services
             }
 
             booking.Cancel(_timeProvider.GetUtcNow().UtcDateTime);
-
-            //TODO: Эта часть должна уйти в consumer на стороне EventService
-
-            //var foundEvent = await _eventService.GetByIdAsync(booking.EventId, cancellationToken);
-
-            //if (foundEvent != null)
-            //{
-            //    foundEvent.ReleaseSeats(booking.BookedSeats);
-            //}
-
             await _bookingRepository.SaveContextAsync(cancellationToken);
+            
+            var bookingCancelledEvent = new BookingCancelledEvent(
+                BookingId: booking.Id,
+                EventId: booking.EventId,
+                UserId: booking.UserId,
+                BookedSeats: booking.BookedSeats,
+                CancelledAt: _timeProvider.GetUtcNow().DateTime
+            );
+
+            await _eventPublisher.PublishAsync(
+                topic: BookingTopics.BookingCancelled,
+                messageKey: booking.EventId.ToString(),
+                message: bookingCancelledEvent,
+                cancellationToken: cancellationToken
+            );
         }
     }
 }
