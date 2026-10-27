@@ -1,7 +1,9 @@
-﻿using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Repositories;
+﻿using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Cache;
+using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Services.EventService.Infrastructure.Data;
 using EventsRestApi.Services.EventService.Infrastructure.Data.Repositories;
 using EventsRestApi.Services.EventService.Infrastructure.MessageBroker;
+using EventsRestApi.Services.EventService.Infrastructure.Services.Cache;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,7 +21,7 @@ namespace EventsRestApi.Services.EventService.Infrastructure.Extensions
                     .UseNpgsql(configuration.GetConnectionString("Default"))
                     .UseSnakeCaseNamingConvention());
 
-            string? redisConnectionString = configuration.GetConnectionString("Redis");
+            var redisConnectionString = configuration.GetConnectionString("Redis");
 
             if (string.IsNullOrEmpty(redisConnectionString))
             {
@@ -27,6 +29,7 @@ namespace EventsRestApi.Services.EventService.Infrastructure.Extensions
             }
 
             services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnectionString));
+            services.AddSingleton<IEventCacheService, RedisEventCacheService>();
 
             services.AddHostedService<KafkaInitializerHost>();
             services.AddHostedService<KafkaBookingEventConsumer>();
