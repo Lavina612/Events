@@ -12,7 +12,7 @@ namespace EventsRestApi.Services.UserService.Domain.Models.Entities
 
         public UserRole Role { get; private set; }
 
-        private User() 
+        private User()
         {
             Login = null!;
             HashedPassword = null!;

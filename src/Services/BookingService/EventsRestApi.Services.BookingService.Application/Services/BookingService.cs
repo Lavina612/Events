@@ -92,7 +92,7 @@ namespace EventsRestApi.Services.BookingService.Application.Services
 
             booking.Cancel(_timeProvider.GetUtcNow().UtcDateTime);
             await _bookingRepository.SaveContextAsync(cancellationToken);
-            
+
             var bookingCancelledEvent = new BookingCancelledEvent(
                 BookingId: booking.Id,
                 EventId: booking.EventId,

@@ -1,11 +1,7 @@
 ﻿using Confluent.Kafka;
 using EventsRestApi.Services.BookingService.Application.InterfacesForInfrastructure.MessageBroker;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Text.Json;
 
 namespace EventsRestApi.Services.BookingService.Infrastructure.MessageBroker
@@ -17,7 +13,7 @@ namespace EventsRestApi.Services.BookingService.Infrastructure.MessageBroker
         private readonly ILogger<KafkaEventPublisher> _logger;
 
         public KafkaEventPublisher(
-            IConfiguration configuration, 
+            IConfiguration configuration,
             ILogger<KafkaEventPublisher> logger)
         {
             _logger = logger;

@@ -14,7 +14,7 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
         private readonly ILogger<KafkaInitializerHost> _logger;
 
         public KafkaInitializerHost(
-            IConfiguration configuration, 
+            IConfiguration configuration,
             ILogger<KafkaInitializerHost> logger)
         {
             _configuration = configuration;
@@ -31,8 +31,8 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
             }
 
             var config = new AdminClientConfig()
-            { 
-                BootstrapServers = bootstrapServers 
+            {
+                BootstrapServers = bootstrapServers
             };
 
             using var adminClient = new AdminClientBuilder(config).Build();

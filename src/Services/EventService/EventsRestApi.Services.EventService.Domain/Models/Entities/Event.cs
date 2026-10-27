@@ -48,9 +48,9 @@
             }
         }
 
-        private Event() 
-        { 
-            Title = null!; 
+        private Event()
+        {
+            Title = null!;
         }
 
         public Event(

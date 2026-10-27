@@ -9,20 +9,20 @@ using System.Text.Json;
 
 namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
 {
-    public class BookingEventConsumer : BackgroundService
+    public class KafkaBookingEventConsumer : BackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
 
-        private readonly ILogger<BookingEventConsumer> _logger;
+        private readonly ILogger<KafkaBookingEventConsumer> _logger;
 
         private readonly TimeProvider _timeProvider;
 
         private readonly ConsumerConfig _consumerConfig;
 
-        public BookingEventConsumer(
+        public KafkaBookingEventConsumer(
             IConfiguration configuration,
             IServiceScopeFactory scopeFactory,
-            ILogger<BookingEventConsumer> logger,
+            ILogger<KafkaBookingEventConsumer> logger,
             TimeProvider timeProvider)
         {
             _scopeFactory = scopeFactory;
@@ -83,12 +83,12 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
                     // Маршрутизация в зависимости от того, из какого топика пришло сообщение
                     if (consumeResult.Topic == BookingTopics.BookingConfirmed)
                     {
-                        isProcessedSuccessfully = ProcessConfirmationWithScope(consumeResult.Message.Value, stoppingToken)
+                        isProcessedSuccessfully = ProcessBookingConfirmation(consumeResult.Message.Value, stoppingToken)
                             .GetAwaiter().GetResult();
                     }
                     else if (consumeResult.Topic == BookingTopics.BookingCancelled)
                     {
-                        isProcessedSuccessfully = ProcessCancellationWithScope(consumeResult.Message.Value, stoppingToken)
+                        isProcessedSuccessfully = ProcessBookingCancellation(consumeResult.Message.Value, stoppingToken)
                             .GetAwaiter().GetResult();
                     }
                     else
@@ -122,7 +122,7 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
             consumer.Close();
         }
 
-        private async Task<bool> ProcessConfirmationWithScope(string rawJson, CancellationToken cancellationToken)
+        private async Task<bool> ProcessBookingConfirmation(string rawJson, CancellationToken cancellationToken)
         {
             using var scope = _scopeFactory.CreateScope();
             var eventRepository = scope.ServiceProvider.GetRequiredService<IEventRepository>();
@@ -224,7 +224,7 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
             }
         }
 
-        private async Task<bool> ProcessCancellationWithScope(string rawJson, CancellationToken cancellationToken)
+        private async Task<bool> ProcessBookingCancellation(string rawJson, CancellationToken cancellationToken)
         {
             using var scope = _scopeFactory.CreateScope();
             var eventRepository = scope.ServiceProvider.GetRequiredService<IEventRepository>();
