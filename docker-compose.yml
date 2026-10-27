@@ -16,6 +16,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
 
   kafka:
     image: confluentinc/cp-kafka:7.6.1
@@ -41,6 +44,8 @@ services:
       interval: 10s
       timeout: 10s
       retries: 15
+    volumes:
+      - kafka_data:/var/lib/kafka/data
 
   # ─────────────────────────── Базы данных (по одной на сервис) ───────────────────────────      
   users-db:
@@ -144,6 +149,10 @@ services:
         condition: service_healthy
 
 volumes:
+  zookeeper_data:
+  zookeeper_log:
+  kafka_data:
   users-db-data:
   events-db-data:
   bookings-db-data:
+  
