@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="../../Shared/EventsRestApi.Services.SharedContracts/EventsRestApi.Services.SharedContracts.csproj" />
+  <Project Path="EventsRestApi.Services.UserService.Application/EventsRestApi.Services.UserService.Application.csproj" />
+  <Project Path="EventsRestApi.Services.UserService.Domain/EventsRestApi.Services.UserService.Domain.csproj" />
+  <Project Path="EventsRestApi.Services.UserService.Infrastructure/EventsRestApi.Services.UserService.Infrastructure.csproj" />
+  <Project Path="EventsRestApi.Services.UserService.IntegrationTests/EventsRestApi.Services.UserService.IntegrationTests.csproj" />
+  <Project Path="EventsRestApi.Services.UserService.Presentation/EventsRestApi.Services.UserService.Presentation.csproj" />
+  <Project Path="EventsRestApi.Services.UserService.Tests/EventsRestApi.Services.UserService.Tests.csproj" />
+</Solution>
