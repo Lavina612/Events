@@ -1,9 +1,11 @@
 ﻿using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Cache;
 using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Services.EventService.Application.Services.Interfaces;
+using EventsRestApi.Services.EventService.Application.Settings;
 using EventsRestApi.Services.EventService.Domain.Models.Entities;
 using EventsRestApi.Services.SharedContracts.Exceptions;
 using EventsRestApi.Services.SharedContracts.Models;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 namespace EventsRestApi.Services.EventService.Application.Services
@@ -14,12 +16,16 @@ namespace EventsRestApi.Services.EventService.Application.Services
 
         private readonly IEventRepository _eventRepository;
 
+        private readonly CacheSettings _cacheSettings;
+
         public EventService(
             IEventCacheService eventCacheService,
-            IEventRepository eventRepository)
+            IEventRepository eventRepository,
+            IOptions<CacheSettings> cacheSettings)
         {
             _eventCacheService = eventCacheService;
             _eventRepository = eventRepository;
+            _cacheSettings = cacheSettings.Value;
         }
 
         public async Task<PaginatedResult<Event>> GetPageAsync(string? title, DateTime? from, DateTime? to, int page, int pageSize, CancellationToken cancellationToken)
@@ -49,7 +55,7 @@ namespace EventsRestApi.Services.EventService.Application.Services
             var topEvents = await _eventRepository.GetTop10PopularAsync(cancellationToken);
 
             var serializedEvents = JsonSerializer.Serialize(topEvents);
-            await _eventCacheService.SetAsync(cacheKey, serializedEvents, TimeSpan.FromMinutes(10));
+            await _eventCacheService.SetAsync(cacheKey, serializedEvents, TimeSpan.FromMinutes(_cacheSettings.TopEventsTtlMinutes));
 
             return topEvents;
         }
@@ -81,7 +87,7 @@ namespace EventsRestApi.Services.EventService.Application.Services
             }
 
             var serializedEvent = JsonSerializer.Serialize(@event);
-            await _eventCacheService.SetAsync(cacheKey, serializedEvent, TimeSpan.FromMinutes(5));
+            await _eventCacheService.SetAsync(cacheKey, serializedEvent, TimeSpan.FromMinutes(_cacheSettings.EventByIdTtlMinutes));
 
             return @event;
         }
