@@ -43,6 +43,17 @@ namespace EventsRestApi.Services.EventService.Presentation.Controllers
                 resultWithEvents.PageSize));
         }
 
+        [HttpGet("top")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(List<EventResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<List<EventResponseDto>>> GetTop10(CancellationToken cancellationToken = default)
+        {
+            var topEvents = await _eventService.GetTop10PopularAsync(cancellationToken);
+
+            return Ok(topEvents.Select(EventMapper.MapToEventResponseDto).ToList());
+        }
+
         [HttpGet("{id:guid}")]
         [AllowAnonymous]
         [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]

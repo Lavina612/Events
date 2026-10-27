@@ -6,6 +6,7 @@ namespace EventsRestApi.Services.EventService.Application.InterfacesForInfrastru
     public interface IEventRepository
     {
         Task<PaginatedResult<Event>> GetPageAsync(string? title, DateTime? from, DateTime? to, int page, int pageSize, CancellationToken cancellationToken);
+        Task<List<Event>> GetTop10PopularAsync(CancellationToken cancellationToken);
         Task<Event?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
         Task<Event> AddAsync(Event addingEvent, CancellationToken cancellationToken);
         Task<bool> UpdateAsync(Event newEvent, CancellationToken cancellationToken);

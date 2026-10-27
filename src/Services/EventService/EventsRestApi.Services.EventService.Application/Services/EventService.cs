@@ -27,6 +27,33 @@ namespace EventsRestApi.Services.EventService.Application.Services
             return await _eventRepository.GetPageAsync(title, from, to, page, pageSize, cancellationToken);
         }
 
+        public async Task<List<Event>> GetTop10PopularAsync(CancellationToken cancellationToken)
+        {
+            var cacheKey = "events:top10";
+            var cachedTopEventsJson = await _eventCacheService.GetAsync(cacheKey);
+
+            if (!string.IsNullOrEmpty(cachedTopEventsJson))
+            {
+                try
+                {
+                    var cachedEvents = JsonSerializer.Deserialize<List<Event>>(cachedTopEventsJson);
+
+                    if (cachedEvents != null)
+                    {
+                        return cachedEvents;
+                    }
+                }
+                catch { }
+            }
+
+            var topEvents = await _eventRepository.GetTop10PopularAsync(cancellationToken);
+
+            var serializedEvents = JsonSerializer.Serialize(topEvents);
+            await _eventCacheService.SetAsync(cacheKey, serializedEvents, TimeSpan.FromMinutes(10));
+
+            return topEvents;
+        }
+
         public async Task<Event> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             var cacheKey = $"event:{id}";
