@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using StackExchange.Redis;
 
 namespace EventsRestApi.Services.EventService.Infrastructure.Extensions
 {
@@ -17,6 +18,15 @@ namespace EventsRestApi.Services.EventService.Infrastructure.Extensions
                 options
                     .UseNpgsql(configuration.GetConnectionString("Default"))
                     .UseSnakeCaseNamingConvention());
+
+            string? redisConnectionString = configuration.GetConnectionString("Redis");
+
+            if (string.IsNullOrEmpty(redisConnectionString))
+            {
+                throw new InvalidOperationException("Строка подключения к Redis обязательно должна присутствовать в конфигурационном файле.");
+            }
+
+            services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnectionString));
 
             services.AddHostedService<KafkaInitializerHost>();
             services.AddHostedService<KafkaBookingEventConsumer>();
