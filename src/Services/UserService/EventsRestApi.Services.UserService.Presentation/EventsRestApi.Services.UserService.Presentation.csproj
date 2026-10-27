@@ -16,9 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EventsRestApi.Services.EventService.Application\EventsRestApi.Services.EventService.Application.csproj" />
-    <ProjectReference Include="..\EventsRestApi.Services.EventService.Infrastructure\EventsRestApi.Services.EventService.Infrastructure.csproj" />
-    <ProjectReference Include="..\EventsRestApi.Services.SharedContracts\EventsRestApi.Services.SharedContracts.csproj" />
+    <ProjectReference Include="..\..\..\Shared\EventsRestApi.Services.SharedContracts\EventsRestApi.Services.SharedContracts.csproj" />
+    <ProjectReference Include="..\EventsRestApi.Services.UserService.Application\EventsRestApi.Services.UserService.Application.csproj" />
+    <ProjectReference Include="..\EventsRestApi.Services.UserService.Infrastructure\EventsRestApi.Services.UserService.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

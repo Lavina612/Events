@@ -17,8 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Shared\EventsRestApi.Services.SharedContracts\EventsRestApi.Services.SharedContracts.csproj" />
     <ProjectReference Include="..\EventsRestApi.Services.BookingService.Domain\EventsRestApi.Services.BookingService.Domain.csproj" />
-    <ProjectReference Include="..\EventsRestApi.Services.SharedContracts\EventsRestApi.Services.SharedContracts.csproj" />
   </ItemGroup>
 
 </Project>

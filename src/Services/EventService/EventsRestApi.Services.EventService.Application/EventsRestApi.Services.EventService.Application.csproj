@@ -13,8 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EventsRestApi.Services.SharedContracts\EventsRestApi.Services.SharedContracts.csproj" />
-    <ProjectReference Include="..\EventsRestApi.Services.UserService.Domain\EventsRestApi.Services.UserService.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Shared\EventsRestApi.Services.SharedContracts\EventsRestApi.Services.SharedContracts.csproj" />
+    <ProjectReference Include="..\EventsRestApi.Services.EventService.Domain\EventsRestApi.Services.EventService.Domain.csproj" />
   </ItemGroup>
 
 </Project>
