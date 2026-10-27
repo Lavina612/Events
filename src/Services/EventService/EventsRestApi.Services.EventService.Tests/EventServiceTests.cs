@@ -1,5 +1,7 @@
-﻿using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Repositories;
+﻿using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Cache;
+using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Services.EventService.Application.Services.Interfaces;
+using EventsRestApi.Services.EventService.Application.Settings;
 using EventsRestApi.Services.EventService.Domain.Models.Entities;
 using EventsRestApi.Services.EventService.Infrastructure.Data;
 using EventsRestApi.Services.EventService.Infrastructure.Data.Repositories;
@@ -7,7 +9,12 @@ using EventsRestApi.Services.SharedContracts.Exceptions;
 using EventsRestApi.Services.SharedContracts.Models;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Moq;
+using System.Diagnostics.Tracing;
+using System.Text.Json;
 
 namespace EventsRestApi.Services.EventService.Tests
 {
@@ -15,22 +22,32 @@ namespace EventsRestApi.Services.EventService.Tests
     {
         private readonly DateTimeOffset fixedTime = new DateTimeOffset(2026, 06, 05, 09, 05, 05, TimeSpan.Zero);
         private readonly List<Event> allEvents = [];
-        private readonly ServiceProvider _serviceProvider;
         private readonly EventDbContext _context;
         private readonly IEventService _eventService;
+        private readonly Mock<IEventCacheService> _mockEventCacheService;
 
         public EventServiceTests()
         {
             var dbName = Guid.NewGuid().ToString();
-            var services = new ServiceCollection();
-            services.AddDbContext<EventDbContext>(options => options.UseInMemoryDatabase(dbName));
+            var options = new DbContextOptionsBuilder<EventDbContext>()
+                .UseInMemoryDatabase(dbName)
+                .Options;
 
-            services.AddScoped<IEventRepository, EventRepository>();
-            services.AddScoped<IEventService, EventsRestApi.Services.EventService.Application.Services.EventService>();
+            _context = new EventDbContext(options);
+            var _eventRepository = new EventRepository(_context);
+            _mockEventCacheService = new Mock<IEventCacheService>();
 
-            _serviceProvider = services.BuildServiceProvider();
-            _context = _serviceProvider.GetRequiredService<EventDbContext>();
-            _eventService = _serviceProvider.GetRequiredService<IEventService>();
+            var cacheSettingsValue = new CacheSettings
+            {
+                EventByIdTtlMinutes = 5,
+                TopEventsTtlMinutes = 10
+            };
+
+            _eventService = new EventsRestApi.Services.EventService.Application.Services.EventService(
+                _mockEventCacheService.Object,
+                _eventRepository,
+                Options.Create(cacheSettingsValue)
+            );
 
             FillTestData();
         }
@@ -39,7 +56,6 @@ namespace EventsRestApi.Services.EventService.Tests
         {
             _context.Database.EnsureDeleted();
             _context.Dispose();
-            _serviceProvider.Dispose();
         }
 
         #region GetPageAsync Tests
@@ -132,6 +148,59 @@ namespace EventsRestApi.Services.EventService.Tests
                 await _eventService.GetByIdAsync(Guid.Empty, cts.Token));
 
             Assert.Equal(cts.Token, exception.CancellationToken);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_WhenCacheHit_ReturnFromCacheWithoutDb()
+        {
+            /*---ARRANGE---*/
+            var startAt = DateTime.UtcNow;
+
+            var cachedEvent = new Event(
+                new Guid($"E0000000-0000-0000-0000-000000000010"),
+                $"Event 1",
+                $"Description 1",
+                startAt,
+                startAt.AddDays(5),
+                1);
+
+            var cacheKey = $"event:{cachedEvent.Id}";
+
+            _mockEventCacheService
+                .Setup(x => x.GetAsync(cacheKey))
+                .ReturnsAsync(JsonSerializer.Serialize(cachedEvent));
+
+            /*---ACT---*/
+            var result = await _eventService.GetByIdAsync(cachedEvent.Id, CancellationToken.None);
+
+            /*---ASSERT---*/
+            Assert.Equivalent(cachedEvent, result);
+
+            var dbCheck = await _context.Events.FirstOrDefaultAsync(x => x.Id == cachedEvent.Id);
+            Assert.Null(dbCheck);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_WhenCacheMiss_GetFromDbAndSaveToCache()
+        {
+            /*---ARRANGE---*/
+            var dbEvent = allEvents[0];
+            var cacheKey = $"event:{dbEvent.Id}";
+
+            _mockEventCacheService.Setup(x => x.GetAsync(cacheKey))
+                .ReturnsAsync((string?)null);
+
+            /*---ACT---*/
+            var result = await _eventService.GetByIdAsync(dbEvent.Id, CancellationToken.None);
+
+            /*---ASSERT---*/
+            Assert.Equivalent(dbEvent, result, true);
+
+            _mockEventCacheService.Verify(x => x.SetAsync(
+                cacheKey,
+                It.Is<string>(json => json.Contains(dbEvent.Title)),
+                TimeSpan.FromMinutes(5)),
+                Times.Once);
         }
 
         #endregion
@@ -233,6 +302,27 @@ namespace EventsRestApi.Services.EventService.Tests
         }
 
         [Fact]
+        public async Task UpdateAsync_EventWasUpdated_UpdateDbAndDeleteFromCache()
+        {
+            /*---ARRANGE---*/
+            var dbEvent = allEvents[0];
+            var cacheKey = $"event:{dbEvent.Id}";
+
+            dbEvent.Title = dbEvent.Title + "New";
+
+            /*---ACT---*/
+            await _eventService.UpdateAsync(dbEvent, CancellationToken.None);
+
+            /*---ASSERT---*/
+            var result = await _context.Events.FirstOrDefaultAsync(x => x.Id == dbEvent.Id);
+
+            Assert.NotNull(result);
+            Assert.Equivalent(dbEvent, result, true);
+
+            _mockEventCacheService.Verify(x => x.DeleteAsync(cacheKey), Times.Once);
+        }
+
+        [Fact]
         public async Task UpdateAsync_CancelBeforeStart_ThrowOperationCancelledException()
         {
             /*---ARRANGE---*/
@@ -280,6 +370,26 @@ namespace EventsRestApi.Services.EventService.Tests
 
             /*---ASSERT---*/
             Assert.False(result);
+        }
+
+        [Fact]
+        public async Task DeleteAsync_EventWasDeleted_DeleteFromDbAndDeleteFromCache()
+        {
+            /*---ARRANGE---*/
+            var dbEvent = allEvents[0];
+            var cacheKey = $"event:{dbEvent.Id}";
+
+            /*---ACT---*/
+            await _eventService.DeleteAsync(dbEvent.Id, CancellationToken.None);
+
+            /*---ASSERT---*/
+            var eventInDb = await _context.Events
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == dbEvent.Id);
+
+            Assert.Null(eventInDb);
+
+            _mockEventCacheService.Verify(x => x.DeleteAsync(cacheKey), Times.Once);
         }
 
         [Fact]

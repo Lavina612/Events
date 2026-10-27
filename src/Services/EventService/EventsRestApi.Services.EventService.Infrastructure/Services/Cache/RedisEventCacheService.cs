@@ -21,7 +21,7 @@ namespace EventsRestApi.Services.EventService.Infrastructure.Services.Cache
             catch (Exception ex)
             {
                 _logger.LogError(
-                    ex, 
+                    ex,
                     "Ошибка при получении базы данных Redis во время инициализации.");
                 _database = null;
             }
@@ -29,65 +29,65 @@ namespace EventsRestApi.Services.EventService.Infrastructure.Services.Cache
 
         public async Task<string?> GetAsync(string key)
         {
-            if (_database == null) 
-            { 
-                return null; 
+            if (_database == null)
+            {
+                return null;
             }
 
             try
             {
                 return await _database.StringGetAsync(key);
             }
-            catch (Exception ex) 
+            catch (Exception ex)
                 when (ex is RedisException or TimeoutException or SocketException)
             {
                 _logger.LogWarning(
-                    ex, 
-                    "Redis недоступен при попытке получить ключ: {Key}. Запрос пойдет в БД.", 
+                    ex,
+                    "Redis недоступен при попытке получить ключ: {Key}. Запрос пойдет в БД.",
                     key);
 
-                return null; 
+                return null;
             }
         }
 
         public async Task SetAsync(string key, string value, TimeSpan expiration)
         {
-            if (_database == null) 
-            { 
-                return; 
+            if (_database == null)
+            {
+                return;
             }
 
             try
             {
                 await _database.StringSetAsync(key, value, expiration);
             }
-            catch (Exception ex) 
+            catch (Exception ex)
                 when (ex is RedisException or TimeoutException or SocketException)
             {
                 _logger.LogWarning(
-                    ex, 
-                    "Redis недоступен при попытке записать ключ: {Key}.", 
+                    ex,
+                    "Redis недоступен при попытке записать ключ: {Key}.",
                     key);
             }
         }
 
         public async Task DeleteAsync(string key)
         {
-            if (_database == null) 
-            { 
-                return; 
+            if (_database == null)
+            {
+                return;
             }
 
             try
             {
                 await _database.KeyDeleteAsync(key);
             }
-            catch (Exception ex) 
+            catch (Exception ex)
                 when (ex is RedisException or TimeoutException or SocketException)
             {
                 _logger.LogWarning(
-                    ex, 
-                    "Redis недоступен при попытке удалить ключ: {Key}.", 
+                    ex,
+                    "Redis недоступен при попытке удалить ключ: {Key}.",
                     key);
             }
         }
