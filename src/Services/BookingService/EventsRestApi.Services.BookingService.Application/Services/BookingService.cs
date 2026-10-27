@@ -90,23 +90,28 @@ namespace EventsRestApi.Services.BookingService.Application.Services
                 return;
             }
 
+            var bookingWasConfirmedBeforeCancellation = booking.Status == BookingStatus.Confirmed;
+
             booking.Cancel(_timeProvider.GetUtcNow().UtcDateTime);
             await _bookingRepository.SaveContextAsync(cancellationToken);
 
-            var bookingCancelledEvent = new BookingCancelledEvent(
-                BookingId: booking.Id,
-                EventId: booking.EventId,
-                UserId: booking.UserId,
-                BookedSeats: booking.BookedSeats,
-                CancelledAt: _timeProvider.GetUtcNow().DateTime
-            );
+            if (bookingWasConfirmedBeforeCancellation)
+            {
+                var bookingCancelledEvent = new BookingCancelledEvent(
+                    BookingId: booking.Id,
+                    EventId: booking.EventId,
+                    UserId: booking.UserId,
+                    BookedSeats: booking.BookedSeats,
+                    CancelledAt: _timeProvider.GetUtcNow().DateTime
+                );
 
-            await _eventPublisher.PublishAsync(
-                topic: BookingTopics.BookingCancelled,
-                messageKey: booking.EventId.ToString(),
-                message: bookingCancelledEvent,
-                cancellationToken: cancellationToken
-            );
+                await _eventPublisher.PublishAsync(
+                    topic: BookingTopics.BookingCancelled,
+                    messageKey: booking.EventId.ToString(),
+                    message: bookingCancelledEvent,
+                    cancellationToken: cancellationToken
+                );
+            }
         }
     }
 }

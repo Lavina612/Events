@@ -41,7 +41,8 @@ namespace EventsRestApi.Services.UserService.Infrastructure.Data.Repositories
 
                 return user;
             }
-            catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505") // ошибка нарушения unique
+            catch (DbUpdateException ex)
+                when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == PostgresErrorCodes.UniqueViolation)
             {
                 throw new UserAlreadyExistsException(login, ex);
             }

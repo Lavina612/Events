@@ -36,7 +36,7 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
                 throw new InvalidOperationException("Настройка Kafka:BootstrapServers обязательно должна присутствовать в конфигурационном файле.");
             }
 
-            var groupId = configuration["Kafka:BootstrapServers"];
+            var groupId = configuration["Kafka:GroupId"];
 
             if (string.IsNullOrEmpty(groupId))
             {
