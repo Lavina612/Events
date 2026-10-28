@@ -57,6 +57,38 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+      
+  # ─────────────────────────── Наблюдаемость (метрики, трейсы, дашборды) ───────────────────────────    
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: eventapi-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.56
+    container_name: eventapi-jaeger
+    ports:
+      - "16686:16686"   # UI
+      - "4317:4317"     # OTLP gRPC
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: eventapi-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
 
   # ─────────────────────────── Базы данных (по одной на сервис) ───────────────────────────      
   users-db:
@@ -121,11 +153,14 @@ services:
       - "5001:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
+      - Otlp__Endpoint=http://jaeger:4317
     depends_on:
       users-db:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      jaeger:
+        condition: service_started
 
   event-service:
     image: eventapi-event-service
@@ -138,12 +173,15 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__Redis=redis:6379
+      - Otlp__Endpoint=http://jaeger:4317
     depends_on:
       events-db:
         condition: service_healthy
       kafka:
         condition: service_healthy
       redis:
+        condition: service_started
+      jaeger:
         condition: service_started
 
   booking-service:
@@ -156,11 +194,14 @@ services:
       - "5003:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
+      - Otlp__Endpoint=http://jaeger:4317
     depends_on:
       bookings-db:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      jaeger:
+        condition: service_started
 
 volumes:
   zookeeper_data:
@@ -169,4 +210,5 @@ volumes:
   users-db-data:
   events-db-data:
   bookings-db-data:
+  grafana-data:
   
