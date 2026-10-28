@@ -1,4 +1,6 @@
-﻿namespace EventsRestApi.Services.EventService.Domain.Models.Entities
+﻿using System.Text.Json.Serialization;
+
+namespace EventsRestApi.Services.EventService.Domain.Models.Entities
 {
     public class Event
     {
@@ -60,6 +62,17 @@
             DateTime startAt,
             DateTime endAt,
             int totalSeats)
+            : this(id, title, description, startAt, endAt, totalSeats, totalSeats) { }
+
+        [JsonConstructor]
+        public Event(
+            Guid id,
+            string title,
+            string? description,
+            DateTime startAt,
+            DateTime endAt,
+            int totalSeats,
+            int availableSeats)
             : this()
         {
             Id = id;
@@ -71,7 +84,7 @@
             Description = description;
 
             _totalSeats = totalSeats;
-            _availableSeats = totalSeats;
+            _availableSeats = availableSeats;
         }
 
         public bool IsStarted(DateTime currentUtcNow)

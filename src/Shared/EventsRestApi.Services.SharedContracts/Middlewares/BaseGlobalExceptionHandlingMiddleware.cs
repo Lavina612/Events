@@ -36,14 +36,16 @@ namespace EventsRestApi.Services.SharedContracts.Middlewares
             var problemDetails = problemDetailsFactory.CreateProblemDetails(
                 httpContext,
                 statusCode: statusCode,
-                detail: ex.Message);
+                detail: statusCode >= StatusCodes.Status500InternalServerError
+                    ? "Неожиданная ошибка на стороне сервера. Попробуйте повторить попытку позже."
+                    : ex.Message);
 
             foreach (var ext in extensions)
             {
                 problemDetails.Extensions[ext.Key] = ext.Value;
             }
 
-            if (problemDetails.Status == StatusCodes.Status500InternalServerError)
+            if (problemDetails.Status >= StatusCodes.Status500InternalServerError)
             {
                 _logger.LogError(
                     ex,

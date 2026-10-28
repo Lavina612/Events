@@ -50,6 +50,16 @@ namespace EventsRestApi.Services.EventService.Infrastructure.Data.Repositories
                 pageSize);
         }
 
+        public async Task<List<Event>> GetTop10PopularAsync(CancellationToken cancellationToken)
+        {
+            return await _context.Events
+                .AsNoTracking()
+                .Where(x => x.TotalSeats > 0)
+                .OrderByDescending(x => ((double)(x.TotalSeats - x.AvailableSeats)) / x.TotalSeats)
+                .Take(10)
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<Event?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             return await _context.Events.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);

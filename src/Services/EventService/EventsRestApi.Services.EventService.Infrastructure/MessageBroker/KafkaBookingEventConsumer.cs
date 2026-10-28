@@ -1,5 +1,7 @@
 ﻿using Confluent.Kafka;
+using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Cache;
 using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Repositories;
+using EventsRestApi.Services.EventService.Application.Models;
 using EventsRestApi.Services.SharedContracts.MessageBroker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +15,8 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
     {
         private readonly IServiceScopeFactory _scopeFactory;
 
+        private readonly ICacheService _eventCacheService;
+
         private readonly ILogger<KafkaBookingEventConsumer> _logger;
 
         private readonly TimeProvider _timeProvider;
@@ -22,10 +26,12 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
         public KafkaBookingEventConsumer(
             IConfiguration configuration,
             IServiceScopeFactory scopeFactory,
+            ICacheService eventCacheService,
             ILogger<KafkaBookingEventConsumer> logger,
             TimeProvider timeProvider)
         {
             _scopeFactory = scopeFactory;
+            _eventCacheService = eventCacheService;
             _logger = logger;
             _timeProvider = timeProvider;
 
@@ -200,6 +206,9 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
 
                 await eventRepository.SaveContextAsync(cancellationToken);
 
+                var cacheKey = $"{CacheKeys.GetEventById}{bookingConfirmedEvent.EventId}";
+                await _eventCacheService.DeleteAsync(cacheKey);
+
                 _logger.LogInformation(
                     @"{ProcessedAt}: Бронирование с Id: {BookingId} подтверждено: 
                         на событие с Id: {EventId} забронировано {BookedSeats} мест, остаток мест: {AvailableSeats}.",
@@ -267,6 +276,9 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
 
                 foundEvent.ReleaseSeats(bookingCancelledEvent.BookedSeats);
                 await eventRepository.SaveContextAsync(cancellationToken);
+
+                var cacheKey = $"{CacheKeys.GetEventById}{bookingCancelledEvent.EventId}";
+                await _eventCacheService.DeleteAsync(cacheKey);
 
                 _logger.LogInformation(
                     @"{ProcessedAt}: После отмены бронирования с Id: {BookingId} на событие с Id: {EventId} возвращено {BookedSeats} мест.",

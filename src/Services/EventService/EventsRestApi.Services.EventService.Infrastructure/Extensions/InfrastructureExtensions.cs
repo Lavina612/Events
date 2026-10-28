@@ -1,11 +1,14 @@
-﻿using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Repositories;
+﻿using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Cache;
+using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Repositories;
 using EventsRestApi.Services.EventService.Infrastructure.Data;
 using EventsRestApi.Services.EventService.Infrastructure.Data.Repositories;
 using EventsRestApi.Services.EventService.Infrastructure.MessageBroker;
+using EventsRestApi.Services.EventService.Infrastructure.Services.Cache;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using StackExchange.Redis;
 
 namespace EventsRestApi.Services.EventService.Infrastructure.Extensions
 {
@@ -17,6 +20,23 @@ namespace EventsRestApi.Services.EventService.Infrastructure.Extensions
                 options
                     .UseNpgsql(configuration.GetConnectionString("Default"))
                     .UseSnakeCaseNamingConvention());
+
+            var redisConnectionString = configuration.GetConnectionString("Redis");
+
+            if (string.IsNullOrEmpty(redisConnectionString))
+            {
+                throw new InvalidOperationException("Строка подключения к Redis обязательно должна присутствовать в конфигурационном файле.");
+            }
+
+            services.AddSingleton<IConnectionMultiplexer>(sp =>
+            {
+                var options = ConfigurationOptions.Parse(redisConnectionString);
+                options.AbortOnConnectFail = false;
+
+                return ConnectionMultiplexer.Connect(options);
+            });
+
+            services.AddSingleton<ICacheService, RedisCacheService>();
 
             services.AddHostedService<KafkaInitializerHost>();
             services.AddHostedService<KafkaBookingEventConsumer>();
