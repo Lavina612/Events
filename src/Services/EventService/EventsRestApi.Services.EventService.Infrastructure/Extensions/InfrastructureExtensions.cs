@@ -28,8 +28,15 @@ namespace EventsRestApi.Services.EventService.Infrastructure.Extensions
                 throw new InvalidOperationException("Строка подключения к Redis обязательно должна присутствовать в конфигурационном файле.");
             }
 
-            services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnectionString));
-            services.AddSingleton<IEventCacheService, RedisEventCacheService>();
+            services.AddSingleton<IConnectionMultiplexer>(sp =>
+            {
+                var options = ConfigurationOptions.Parse(redisConnectionString);
+                options.AbortOnConnectFail = false;
+
+                return ConnectionMultiplexer.Connect(options);
+            });
+
+            services.AddSingleton<ICacheService, RedisCacheService>();
 
             services.AddHostedService<KafkaInitializerHost>();
             services.AddHostedService<KafkaBookingEventConsumer>();

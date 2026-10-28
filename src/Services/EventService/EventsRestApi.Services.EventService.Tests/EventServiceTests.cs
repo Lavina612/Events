@@ -1,5 +1,5 @@
 ﻿using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Cache;
-using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Repositories;
+using EventsRestApi.Services.EventService.Application.Models;
 using EventsRestApi.Services.EventService.Application.Services.Interfaces;
 using EventsRestApi.Services.EventService.Application.Settings;
 using EventsRestApi.Services.EventService.Domain.Models.Entities;
@@ -9,11 +9,9 @@ using EventsRestApi.Services.SharedContracts.Exceptions;
 using EventsRestApi.Services.SharedContracts.Models;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
-using System.Diagnostics.Tracing;
 using System.Text.Json;
 
 namespace EventsRestApi.Services.EventService.Tests
@@ -24,7 +22,7 @@ namespace EventsRestApi.Services.EventService.Tests
         private readonly List<Event> allEvents = [];
         private readonly EventDbContext _context;
         private readonly IEventService _eventService;
-        private readonly Mock<IEventCacheService> _mockEventCacheService;
+        private readonly Mock<ICacheService> _mockEventCacheService;
 
         public EventServiceTests()
         {
@@ -35,7 +33,7 @@ namespace EventsRestApi.Services.EventService.Tests
 
             _context = new EventDbContext(options);
             var _eventRepository = new EventRepository(_context);
-            _mockEventCacheService = new Mock<IEventCacheService>();
+            _mockEventCacheService = new Mock<ICacheService>();
 
             var cacheSettingsValue = new CacheSettings
             {
@@ -46,7 +44,8 @@ namespace EventsRestApi.Services.EventService.Tests
             _eventService = new EventsRestApi.Services.EventService.Application.Services.EventService(
                 _mockEventCacheService.Object,
                 _eventRepository,
-                Options.Create(cacheSettingsValue)
+                Options.Create(cacheSettingsValue),
+                NullLogger<EventsRestApi.Services.EventService.Application.Services.EventService>.Instance
             );
 
             FillTestData();
@@ -164,7 +163,7 @@ namespace EventsRestApi.Services.EventService.Tests
                 startAt.AddDays(5),
                 1);
 
-            var cacheKey = $"event:{cachedEvent.Id}";
+            var cacheKey = $"{CacheKeys.GetEventById}{cachedEvent.Id}";
 
             _mockEventCacheService
                 .Setup(x => x.GetAsync(cacheKey))
@@ -185,7 +184,7 @@ namespace EventsRestApi.Services.EventService.Tests
         {
             /*---ARRANGE---*/
             var dbEvent = allEvents[0];
-            var cacheKey = $"event:{dbEvent.Id}";
+            var cacheKey = $"{CacheKeys.GetEventById}{dbEvent.Id}";
 
             _mockEventCacheService.Setup(x => x.GetAsync(cacheKey))
                 .ReturnsAsync((string?)null);
@@ -306,7 +305,7 @@ namespace EventsRestApi.Services.EventService.Tests
         {
             /*---ARRANGE---*/
             var dbEvent = allEvents[0];
-            var cacheKey = $"event:{dbEvent.Id}";
+            var cacheKey = $"{CacheKeys.GetEventById}{dbEvent.Id}";
 
             dbEvent.Title = dbEvent.Title + "New";
 
@@ -377,7 +376,7 @@ namespace EventsRestApi.Services.EventService.Tests
         {
             /*---ARRANGE---*/
             var dbEvent = allEvents[0];
-            var cacheKey = $"event:{dbEvent.Id}";
+            var cacheKey = $"{CacheKeys.GetEventById}{dbEvent.Id}";
 
             /*---ACT---*/
             await _eventService.DeleteAsync(dbEvent.Id, CancellationToken.None);

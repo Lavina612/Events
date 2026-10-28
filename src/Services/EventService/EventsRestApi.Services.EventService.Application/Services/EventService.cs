@@ -1,10 +1,12 @@
 ﻿using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Cache;
 using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Repositories;
+using EventsRestApi.Services.EventService.Application.Models;
 using EventsRestApi.Services.EventService.Application.Services.Interfaces;
 using EventsRestApi.Services.EventService.Application.Settings;
 using EventsRestApi.Services.EventService.Domain.Models.Entities;
 using EventsRestApi.Services.SharedContracts.Exceptions;
 using EventsRestApi.Services.SharedContracts.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 
@@ -12,20 +14,24 @@ namespace EventsRestApi.Services.EventService.Application.Services
 {
     public class EventService : IEventService
     {
-        private readonly IEventCacheService _eventCacheService;
+        private readonly ICacheService _eventCacheService;
 
         private readonly IEventRepository _eventRepository;
 
         private readonly CacheSettings _cacheSettings;
 
+        private readonly ILogger<EventService> _logger;
+
         public EventService(
-            IEventCacheService eventCacheService,
+            ICacheService eventCacheService,
             IEventRepository eventRepository,
-            IOptions<CacheSettings> cacheSettings)
+            IOptions<CacheSettings> cacheSettings,
+            ILogger<EventService> logger)
         {
             _eventCacheService = eventCacheService;
             _eventRepository = eventRepository;
             _cacheSettings = cacheSettings.Value;
+            _logger = logger;
         }
 
         public async Task<PaginatedResult<Event>> GetPageAsync(string? title, DateTime? from, DateTime? to, int page, int pageSize, CancellationToken cancellationToken)
@@ -35,7 +41,7 @@ namespace EventsRestApi.Services.EventService.Application.Services
 
         public async Task<List<Event>> GetTop10PopularAsync(CancellationToken cancellationToken)
         {
-            var cacheKey = "events:top10";
+            var cacheKey = CacheKeys.GetTop10Events;
             var cachedTopEventsJson = await _eventCacheService.GetAsync(cacheKey);
 
             if (!string.IsNullOrEmpty(cachedTopEventsJson))
@@ -49,7 +55,13 @@ namespace EventsRestApi.Services.EventService.Application.Services
                         return cachedEvents;
                     }
                 }
-                catch { }
+                catch (JsonException ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "Ошибка при попытке десериализовать закэшированный объект с Key: {CacheKey}.",
+                        cacheKey);
+                }
             }
 
             var topEvents = await _eventRepository.GetTop10PopularAsync(cancellationToken);
@@ -62,7 +74,7 @@ namespace EventsRestApi.Services.EventService.Application.Services
 
         public async Task<Event> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
-            var cacheKey = $"event:{id}";
+            var cacheKey = $"{CacheKeys.GetEventById}{id}";
             var cachedEventJson = await _eventCacheService.GetAsync(cacheKey);
 
             if (!string.IsNullOrEmpty(cachedEventJson))
@@ -76,7 +88,13 @@ namespace EventsRestApi.Services.EventService.Application.Services
                         return cachedEvent;
                     }
                 }
-                catch { }
+                catch (JsonException ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "Ошибка при попытке десериализовать закэшированный объект с Key: {CacheKey}.",
+                        cacheKey);
+                }
             }
 
             var @event = await _eventRepository.GetByIdAsync(id, cancellationToken);
@@ -101,7 +119,7 @@ namespace EventsRestApi.Services.EventService.Application.Services
         {
             var result = await _eventRepository.UpdateAsync(updatingEvent, cancellationToken);
 
-            var cacheKey = $"event:{updatingEvent.Id}";
+            var cacheKey = $"{CacheKeys.GetEventById}{updatingEvent.Id}";
             await _eventCacheService.DeleteAsync(cacheKey);
 
             return result;
@@ -111,7 +129,7 @@ namespace EventsRestApi.Services.EventService.Application.Services
         {
             var result = await _eventRepository.DeleteAsync(id, cancellationToken);
 
-            var cacheKey = $"event:{id}";
+            var cacheKey = $"{CacheKeys.GetEventById}{id}";
             await _eventCacheService.DeleteAsync(cacheKey);
 
             return result;

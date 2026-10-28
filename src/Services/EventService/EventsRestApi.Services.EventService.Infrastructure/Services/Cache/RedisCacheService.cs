@@ -5,14 +5,14 @@ using System.Net.Sockets;
 
 namespace EventsRestApi.Services.EventService.Infrastructure.Services.Cache
 {
-    public class RedisEventCacheService : IEventCacheService
+    public class RedisCacheService : ICacheService
     {
         private readonly IDatabase? _database;
-        private readonly ILogger<RedisEventCacheService> _logger;
+        private readonly ILogger<RedisCacheService> _logger;
 
-        public RedisEventCacheService(IConnectionMultiplexer redis, ILogger<RedisEventCacheService> _logger)
+        public RedisCacheService(IConnectionMultiplexer redis, ILogger<RedisCacheService> logger)
         {
-            this._logger = _logger;
+            _logger = logger;
 
             try
             {

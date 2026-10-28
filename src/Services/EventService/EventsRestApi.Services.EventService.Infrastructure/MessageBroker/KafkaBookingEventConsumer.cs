@@ -1,6 +1,7 @@
 ﻿using Confluent.Kafka;
 using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Cache;
 using EventsRestApi.Services.EventService.Application.InterfacesForInfrastructure.Repositories;
+using EventsRestApi.Services.EventService.Application.Models;
 using EventsRestApi.Services.SharedContracts.MessageBroker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +15,7 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
     {
         private readonly IServiceScopeFactory _scopeFactory;
 
-        private readonly IEventCacheService _eventCacheService;
+        private readonly ICacheService _eventCacheService;
 
         private readonly ILogger<KafkaBookingEventConsumer> _logger;
 
@@ -25,7 +26,7 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
         public KafkaBookingEventConsumer(
             IConfiguration configuration,
             IServiceScopeFactory scopeFactory,
-            IEventCacheService eventCacheService,
+            ICacheService eventCacheService,
             ILogger<KafkaBookingEventConsumer> logger,
             TimeProvider timeProvider)
         {
@@ -205,7 +206,7 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
 
                 await eventRepository.SaveContextAsync(cancellationToken);
 
-                var cacheKey = $"event:{bookingConfirmedEvent.EventId}";
+                var cacheKey = $"{CacheKeys.GetEventById}{bookingConfirmedEvent.EventId}";
                 await _eventCacheService.DeleteAsync(cacheKey);
 
                 _logger.LogInformation(
@@ -276,7 +277,7 @@ namespace EventsRestApi.Services.EventService.Infrastructure.MessageBroker
                 foundEvent.ReleaseSeats(bookingCancelledEvent.BookedSeats);
                 await eventRepository.SaveContextAsync(cancellationToken);
 
-                var cacheKey = $"event:{bookingCancelledEvent.EventId}";
+                var cacheKey = $"{CacheKeys.GetEventById}{bookingCancelledEvent.EventId}";
                 await _eventCacheService.DeleteAsync(cacheKey);
 
                 _logger.LogInformation(
