@@ -557,6 +557,79 @@
 
 ---
 
+## 🔭 Наблюдаемость (Observability)
+
+В каждый микросервис добавлен стек наблюдаемости: метрики, трейсы и структурированные логи. Настройка вынесена в метод-расширения  Presentation слоя каждого микросервиса, который подключаются в Program (`builder.AddObservability()`), а также подключается эндпоинт метрик (`app.MapPrometheusScrapingEndpoint()`).
+
+### Добавленные инструменты
+
+| Инструмент | Назначение | UI / порт на хосте |
+| --- | --- | --- |
+| **OpenTelemetry SDK** | Сбор телеметрии: инструментация ASP.NET Core, HttpClient, EF Core (SQL-запросы) и метрик рантайма .NET | — |
+| **Prometheus** `v2.51.0` | Хранилище метрик, скрейпит `/metrics` каждого сервиса раз в 15 секунд | http://localhost:9090 |
+| **Jaeger** `1.56` | Хранилище и UI трейсов (приём по OTLP gRPC) | http://localhost:16686 (UI), `4317` (OTLP gRPC) |
+| **Grafana** `10.4.2` | Дашборды по метрикам из Prometheus | http://localhost:3000 (логин `admin`, пароль `admin`) |
+| **Serilog** | Структурированные JSON-логи в консоль (`CompactJsonFormatter`) | — |
+
+Имена сервисов в Jaeger и Prometheus (`job`): `user-service`, `event-service`, `booking-service`.
+
+### Как запустить стек мониторинга
+
+Стек мониторинга `prometheus`, `jaeger` и `grafana` запускается автоматически вместе со всем проектом при запуске приложения (из корня репозитория, подробности в разделе [Запуск приложения](#запуск-приложения)):
+
+```bash
+docker compose up -d --build
+```
+
+Сервисы получают адрес Jaeger через переменную окружения `Otlp__Endpoint=http://jaeger:4317`. Если нужен только стек мониторинга (например, при локальном запуске сервисов на хосте):
+
+```bash
+docker compose up -d prometheus jaeger grafana
+```
+
+> При запуске сервиса на хосте `Otlp:Endpoint` берётся из `appsettings.json` (`http://localhost:4317`), поэтому трейсы попадут в Jaeger из контейнера. Prometheus при этом скрейпит только сервисы внутри Docker-сети.
+
+### Метрики и Prometheus
+
+* Каждый сервис отдаёт метрики в формате Prometheus по эндпоинту `GET /metrics`.
+* Список целей скрейпинга описан в [`prometheus.yml`](prometheus.yml). Проверить, что все три сервиса собираются, можно в Prometheus: **Status → Targets** (состояние `UP`).
+* Основные метрики: `http_server_request_duration_seconds` (latency, `_bucket` / `_count` / `_sum`), `http_server_active_requests`, а также метрики рантайма .NET (`dotnet_gc_*`, `dotnet_thread_pool_*`, `dotnet_process_memory_working_set_bytes`).
+
+### Трейсы и Jaeger
+
+* Трейсы отправляются в Jaeger по OTLP gRPC. Адрес задаётся в `appsettings.json` в секции `Otlp` (`Endpoint`, `ServiceName`) и переопределяется переменной окружения `Otlp__Endpoint`.
+* В Jaeger UI (http://localhost:16686) в поле **Service** выберите нужный сервис: трейсы содержат спаны входящих HTTP-запросов и SQL-запросов к БД (EF Core). Запросы к `/metrics` в трейсы не попадают.
+
+### Логи
+
+Логи сервисов пишутся в консоль в формате Compact JSON (Serilog): каждая строка — отдельный JSON-объект с полями `@t` (время), `@l` (уровень), `@mt` (шаблон сообщения), `SourceContext` и `service` (имя сервиса). Уровни логирования настраиваются в секции `Serilog` файла `appsettings.json`.
+
+Логи можно посмотреть с помощью команды:
+
+```bash
+docker compose logs -f event-service
+```
+
+### Дашборд Grafana
+
+Grafana настроена через provisioning — datasource и дашборд подключаются автоматически из конфигурационных файлов, вручную ничего добавлять не нужно:
+
+* [`grafana/provisioning/datasources/prometheus.yml`](grafana/provisioning/datasources/prometheus.yml) — источник данных Prometheus (`http://prometheus:9090`);
+* [`grafana/provisioning/dashboards/dashboards.yml`](grafana/provisioning/dashboards/dashboards.yml) — провайдер дашбордов;
+* [`grafana/dashboards/events-services.json`](grafana/dashboards/events-services.json) — дашборд **Events Services - Overview**.
+
+После запуска Grafana доступна по адресу: http://localhost:3000 (admin / admin) → **Dashboards → Events Services - Overview**. Переменная **Service** позволяет выбрать один или несколько сервисов. Панели:
+
+* **Throughput (RPS)** — `rate(http_server_request_duration_seconds_count)`;
+* **Latency p50 / p95 / p99** — `histogram_quantile` по `http_server_request_duration_seconds_bucket`;
+* **Error rate (5xx, %)** — доля ответов со статусом 5xx;
+* **Active requests** — `http_server_active_requests`;
+* **.NET GC collections**, **.NET thread pool threads**, **Process working set** — метрики рантайма .NET.
+
+Запросы к `/metrics` (скрейпинг Prometheus) исключены из панелей throughput и latency.
+
+---
+
 ## 🧪 Запуск автоматических тестов (xUnit)
 
 В репозитории реализовано два типа автоматических тестов:
