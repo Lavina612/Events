@@ -4,6 +4,11 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Serilog;
+using Serilog.Formatting.Compact;
 
 namespace EventsRestApi.Services.UserService.Presentation.Extensions
 {
@@ -97,6 +102,33 @@ namespace EventsRestApi.Services.UserService.Presentation.Extensions
             });
 
             return services;
+        }
+        
+        public static WebApplicationBuilder AddObservability(this WebApplicationBuilder builder)
+        {
+            var configuration = builder.Configuration;
+            var serviceName = configuration["Otlp:ServiceName"] ?? "user-service";
+            var otlpEndpoint = configuration["Otlp:Endpoint"] ?? "http://localhost:4317";
+
+            builder.Host.UseSerilog((context, loggerConfiguration) => loggerConfiguration
+                .ReadFrom.Configuration(context.Configuration)
+                .Enrich.WithProperty("service", serviceName)
+                .WriteTo.Console(new CompactJsonFormatter()));
+
+            builder.Services.AddOpenTelemetry()
+                .ConfigureResource(resource => resource.AddService(serviceName: serviceName))
+                .WithTracing(tracing => tracing
+                    .AddAspNetCoreInstrumentation(options =>
+                        options.Filter = httpContext => !httpContext.Request.Path.StartsWithSegments("/metrics"))
+                    .AddHttpClientInstrumentation()
+                    .AddEntityFrameworkCoreInstrumentation()
+                    .AddOtlpExporter(options => options.Endpoint = new Uri(otlpEndpoint)))
+                .WithMetrics(metrics => metrics
+                    .AddAspNetCoreInstrumentation()
+                    .AddRuntimeInstrumentation()
+                    .AddPrometheusExporter());
+
+            return builder;
         }
 
         private static Task WriteProblemDetailsAsync(HttpContext context, int statusCode, string title, string detail)
